@@ -3,7 +3,7 @@ $.module('component/mvc', function() {
 var module = this;
 
 $.require()
-    .script(
+    .library(
         'server',
         'mvc/controller',
         'mvc/model',

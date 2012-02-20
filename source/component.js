@@ -24,7 +24,7 @@ var Component = function(name, options, callback) {
     self.environment   = options.environment || Foundry.environment;
     self.debug         = (self.environment=='development');
     self.baseUrl       = options.baseUrl || Foundry.indexUrl + "?option=" + this.componentName;
-    self.scriptPath    = options.scriptPath || Foundry.rootPath + "media/" + this.componentName + (self.debug) ? "/scripts_/" : "/scripts/";
+    self.scriptPath    = options.scriptPath || Foundry.rootPath + "media/" + this.componentName + ((self.debug) ? "/scripts_/" : "/scripts/");
     self.ejsPath       = self.baseUrl + '&controller=themes&task=getAjaxTemplate&no_html=1&tmpl=component&templateName=';
     self.isReady       = false;
     self.dependencies  = $.Deferred();
@@ -80,13 +80,14 @@ $.extend(Component.prototype, {
     require: function(options) {
 
         var self = this,
+            options = options || {},
             require = $.require($.extend(options, {path: self.scriptPath})),
             done = require.done;
 
         // To ensure all require callbacks are executed after the component's dependencies are ready,
         // every callback made through component.require() is wrapped in a component.ready() function.
         require.done = function(callback) {
-            done.call(null, (options.loadingComponentDependencies) ? callback : function() { self.ready(callback); });
+            done.call(require, (options.loadingComponentDependencies) ? callback : function() { self.ready(callback); });
         }
 
         return require;
