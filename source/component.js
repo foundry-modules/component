@@ -73,7 +73,9 @@ $.extend(Component.prototype, {
 
         self.dependencies
             .done(function() {
-                $.module('component/mvc').done(callback);
+                $.module('component/mvc').done(function(){
+                    self.run(callback);
+                });
             });
     },
 
