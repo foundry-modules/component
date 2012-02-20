@@ -6,7 +6,8 @@ DEVELOPMENT_DIR = ${FOUNDRY_DIR}/scripts_
 UGLIFY = uglifyjs --unsafe -nc
 
 BASE_FILES = ${FOUNDRY_DIR}/build/foundry_intro.js \
-${SRC_DIR}/jquery.component.js \
+${SRC_DIR}/component.js \
+${SRC_DIR}/component.mvc.js \
 ${FOUNDRY_DIR}/build/foundry_outro.js
 
 all: body min
