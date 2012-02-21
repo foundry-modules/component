@@ -25,7 +25,8 @@ var Component = function(name, options, callback) {
     self.debug         = (self.environment=='development');
     self.baseUrl       = options.baseUrl || Foundry.indexUrl + "?option=" + this.componentName;
     self.scriptPath    = options.scriptPath || Foundry.rootPath + "media/" + this.componentName + ((self.debug) ? "/scripts_/" : "/scripts/");
-    self.ejsPath       = self.baseUrl + '&controller=themes&task=getAjaxTemplate&no_html=1&tmpl=component&templateName=';
+    self.templatePath  = self.baseUrl + '&controller=themes&task=getAjaxTemplate&no_html=1&tmpl=component&templateName=';
+    self.languagePath  = self.baseUrl + '&controller=lang&task=getLanguage&no_html=1';
     self.isReady       = false;
     self.dependencies  = $.Deferred();
 
@@ -86,12 +87,28 @@ $.extend(Component.prototype, {
         var self = this,
             options = options || {},
             require = $.require($.extend(options, {path: self.scriptPath})),
-            done = require.done;
+            __language = require.language,
+            __done = require.done;
+
+        require.language = function() {
+            var args = $.makeArray(arguments),
+                override = {path: self.languagePath};
+
+            if ($.isPlainObject(args[0])) {
+
+                args[0] = $.extend(args[0], override);
+
+            } else {
+                args = [override].concat(args);
+            }
+
+            return __language.apply(require, args);
+        }
 
         // To ensure all require callbacks are executed after the component's dependencies are ready,
         // every callback made through component.require() is wrapped in a component.ready() function.
         require.done = function(callback) {
-            done.call(require, (options.loadingComponentDependencies) ? callback : function() { self.ready(callback); });
+            return __done.call(require, (options.loadingComponentDependencies) ? callback : function() { self.ready(callback); });
         }
 
         return require;
