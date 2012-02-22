@@ -87,8 +87,46 @@ $.extend(Component.prototype, {
         var self = this,
             options = options || {},
             require = $.require($.extend(options, {path: self.scriptPath})),
+            __library = require.library,
+            __script = require.script,
             __language = require.language,
-            __done = require.done;
+            __done = require.done,
+            requireScript;
+
+        require.script = requireScript = function() {
+
+            // TODO: Merge script options
+
+            // Translate module names
+            var names = $.makeArray(arguments),
+
+                args = $.map(names, function(name) {
+
+                    // Ignore script settings & module definitions
+                    if ($.isPlainObject(name) || $.isArray(name)) return;
+
+                    // Ignore urls & relative paths
+                    if ($.isUrl(name) || /^(\/|\.)/.test(name)) return;
+
+                    var moduleName = self.name.toLowerCase() + "/" + name,
+                        moduleUrl = self.scriptPath + name + ".js"; // TODO: Get extension from options
+
+                    return [[moduleName, moduleUrl, true]];
+                });
+
+            return __script.apply(require, args);
+        }
+
+        require.library = function() {
+
+            require.script = __script;
+
+            __library.apply(require, arguments);
+
+            require.script = requireScript;
+
+            return require;
+        }
 
         require.language = function() {
             var args = $.makeArray(arguments),
@@ -112,6 +150,19 @@ $.extend(Component.prototype, {
         }
 
         return require;
+    },
+
+    module: function(name, factory) {
+
+        var self = this;
+
+        // TODO: Support for multiple module factory assignment
+        if ($.isArray(name))
+            return;
+
+        name = self.name.toLowerCase() + "/" + name;
+
+        return $.module.apply(null, [name, factory]);
     }
 });
 
