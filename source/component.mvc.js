@@ -8,6 +8,7 @@ $.require()
         'mvc/controller',
         'mvc/model',
         'mvc/view',
+        'mvc/view.ejs',
         'mvc/lang.json'
     )
     .done(function() {
