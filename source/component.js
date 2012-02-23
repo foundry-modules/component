@@ -103,10 +103,10 @@ $.extend(Component.prototype, {
                 args = $.map(names, function(name) {
 
                     // Ignore script settings & module definitions
-                    if ($.isPlainObject(name) || $.isArray(name)) return;
+                    if ($.isPlainObject(name) || $.isArray(name)) return name;
 
                     // Ignore urls & relative paths
-                    if ($.isUrl(name) || /^(\/|\.)/.test(name)) return;
+                    if ($.isUrl(name) || /^(\/|\.)/.test(name)) return name;
 
                     var moduleName = self.name.toLowerCase() + "/" + name,
                         moduleUrl = self.scriptPath + name + ".js"; // TODO: Get extension from options
