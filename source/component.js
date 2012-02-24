@@ -72,14 +72,22 @@ $.extend(Component.prototype, {
 
         var self = this;
 
-        self.dependencies
-            .done(function() {
-                $.module('component/mvc').done(function(){
-                    $(document).ready(function(){
+        // Only when MVC is loaded
+        $.module('component/mvc').done(function() {
+
+            // and intial dependencies are loaded
+            self.dependencies
+                .done(function() {
+
+                    // and document is ready
+                    $(document).ready(function() {
+
+                        // then only execute ready callback
                         self.run(callback);
+
                     });
                 });
-            });
+        });
     },
 
     require: function(options) {
@@ -102,11 +110,17 @@ $.extend(Component.prototype, {
 
                 args = $.map(names, function(name) {
 
-                    // Ignore script settings & module definitions
-                    if ($.isPlainObject(name) || $.isArray(name)) return name;
+                        // Ignore script settings
+                    if ($.isPlainObject(name) ||
 
-                    // Ignore urls & relative paths
-                    if ($.isUrl(name) || /^(\/|\.)/.test(name)) return name;
+                        // and module definitions
+                        $.isArray(name) ||
+
+                        // and urls
+                        $.isUrl(name) ||
+
+                        // and relative paths.
+                        /^(\/|\.)/.test(name)) return name;
 
                     var moduleName = self.name.toLowerCase() + "/" + name,
                         moduleUrl = self.scriptPath + name + ".js"; // TODO: Get extension from options
@@ -129,6 +143,7 @@ $.extend(Component.prototype, {
         }
 
         require.language = function() {
+
             var args = $.makeArray(arguments),
                 override = {path: self.languagePath};
 
@@ -146,7 +161,15 @@ $.extend(Component.prototype, {
         // To ensure all require callbacks are executed after the component's dependencies are ready,
         // every callback made through component.require() is wrapped in a component.ready() function.
         require.done = function(callback) {
-            return __done.call(require, (options.loadingComponentDependencies) ? callback : function() { self.ready(callback); });
+
+            return __done.call(require, function(){
+
+                $.module('component/mvc').done(
+
+                    (options.loadingComponentDependencies) ? callback : function() { self.ready(callback); }
+
+                );
+            });
         }
 
         return require;
