@@ -15,6 +15,8 @@ var Components = {};
 
 var Component = function(name, options, callback) {
 
+    // @TODO: Component should be a deferred object, replace $.module("component/mvc").done().
+
     var self = this;
 
     self.options       = options;
@@ -166,8 +168,13 @@ $.extend(Component.prototype, {
 
                 $.module('component/mvc').done(
 
-                    (options.loadingComponentDependencies) ? callback : function() { self.ready(callback); }
-
+                    (options.loadingComponentDependencies) ?
+                        function() {
+                            callback.call(self, $);
+                        } :
+                        function() {
+                            self.ready(callback);
+                        }
                 );
             });
         }
@@ -185,7 +192,17 @@ $.extend(Component.prototype, {
 
         name = self.name.toLowerCase() + "/" + name;
 
-        return $.module.apply(null, [name, factory]);
+        return $.module.apply(null, [name, function(){
+
+            var module = this;
+
+            // Wait until MVC is loaded
+            $.module('component/mvc').done(function(){
+
+                factory.call(module, $);
+
+            });
+        }]);
     }
 });
 
