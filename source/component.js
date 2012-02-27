@@ -23,12 +23,16 @@ var Component = function(name, options, callback) {
     self.name          = name;
     self.componentName = "com_" + this.name.toLowerCase();
     self.version       = options.version;
+
     self.environment   = options.environment || Foundry.environment;
     self.debug         = (self.environment=='development');
-    self.baseUrl       = options.baseUrl || Foundry.indexUrl + "?option=" + this.componentName;
-    self.scriptPath    = options.scriptPath || Foundry.rootPath + "media/" + this.componentName + ((self.debug) ? "/scripts_/" : "/scripts/");
-    self.templatePath  = self.baseUrl + '&controller=themes&task=getAjaxTemplate&no_html=1&tmpl=component&templateName=';
-    self.languagePath  = self.baseUrl + '&controller=lang&task=getLanguage&no_html=1';
+
+    self.baseUrl       = options.baseUrl      || Foundry.indexUrl + "?option=" + this.componentName;
+    self.scriptPath    = options.scriptPath   || Foundry.rootPath + "media/" + this.componentName + ((self.debug) ? "/scripts_/" : "/scripts/");
+    self.viewPath      = options.viewPath     || Foundry.rootPath + "media/" + this.componentName + ((self.debug) ? "/scripts_/" : "/scripts/");
+    self.templatePath  = options.templatePath || self.baseUrl + '&tmpl=component&no_html=1&controller=themes&task=getAjaxTemplate';
+    self.languagePath  = options.languagePath || self.baseUrl + '&tmpl=component&no_html=1&controller=lang&task=getLanguage';
+
     self.isReady       = false;
     self.dependencies  = $.Deferred();
 
@@ -97,15 +101,14 @@ $.extend(Component.prototype, {
         var self = this,
             options = options || {},
             require = $.require($.extend(options, {path: self.scriptPath})),
-            __library = require.library,
-            __script = require.script,
+            __library  = require.library,
+            __script   = require.script,
             __language = require.language,
-            __done = require.done,
+            __template = require.template,
+            __done     = require.done,
             requireScript;
 
         require.script = requireScript = function() {
-
-            // TODO: Merge script options
 
             // Translate module names
             var names = $.makeArray(arguments),
@@ -131,34 +134,121 @@ $.extend(Component.prototype, {
                 });
 
             return __script.apply(require, args);
-        }
+        };
+
+        // Override path
+        require.template = function() {
+
+            var args = $.makeArray(arguments),
+
+                options = {path: self.templatePath},
+
+                names = [],
+
+                templatePrefix = self.name.toLowerCase() + "/";
+
+            if ($.isPlainObject(args[0])) {
+
+                options = $.extend(args[0], options);
+
+                names = args.slice(1);
+
+            } else {
+
+                names = args;
+            }
+
+            names = $.map(names, function(name) {
+
+                templateName = templatePrefix + name;
+
+                return [[templateName, name]];
+            });
+
+            return __template.apply(require, [options].concat(names));
+        };
+
+        require.view = function() {
+
+            var batch = this,
+
+                args = $.makeArray(arguments),
+
+                options = {path: self.viewPath},
+
+                names = [],
+
+                templatePrefix = self.name.toLowerCase() + "/";
+
+            if ($.isPlainObject(args[0])) {
+
+                options = $.extend(args[0], options);
+
+                names = args.slice(1);
+            }
+
+            if (names < 1) {
+                return require;
+            }
+
+            batch.addTask(
+                $.ajax(
+                {
+                    url: options.path,
+
+                    dataType: "json",
+
+                    data: {
+                        templates: names
+                    }
+                })
+                .success(function(templates) {
+
+                    if ($.isArray(templates)) {
+
+                        $.each(templates, function(i, template) {
+
+                            $.template(templatePrefix + template.name, template.content);
+                        });
+                    }
+                })
+            );
+
+            return require;
+        };
 
         require.library = function() {
 
+            // Replace component script method
+            // with foundry script method
             require.script = __script;
 
+            // Execute library method
             __library.apply(require, arguments);
 
+            // Reverse script method replacement
             require.script = requireScript;
 
             return require;
-        }
+        };
 
         require.language = function() {
 
             var args = $.makeArray(arguments),
-                override = {path: self.languagePath};
+
+                options = {path: self.languagePath},
+
+                names = [];
 
             if ($.isPlainObject(args[0])) {
 
-                args[0] = $.extend(args[0], override);
+                options = $.extend(args[0], options);
 
-            } else {
-                args = [override].concat(args);
+                names = args.slice(1);
             }
 
-            return __language.apply(require, args);
-        }
+            return __language.apply(require, [options].concat(names));
+        };
 
         // To ensure all require callbacks are executed after the component's dependencies are ready,
         // every callback made through component.require() is wrapped in a component.ready() function.
@@ -169,15 +259,17 @@ $.extend(Component.prototype, {
                 $.module('component/mvc').done(
 
                     (options.loadingComponentDependencies) ?
+
                         function() {
                             callback.call(self, $);
                         } :
+
                         function() {
                             self.ready(callback);
                         }
                 );
             });
-        }
+        };
 
         return require;
     },
@@ -187,8 +279,9 @@ $.extend(Component.prototype, {
         var self = this;
 
         // TODO: Support for multiple module factory assignment
-        if ($.isArray(name))
+        if ($.isArray(name)) {
             return;
+        }
 
         name = self.name.toLowerCase() + "/" + name;
 
@@ -208,11 +301,13 @@ $.extend(Component.prototype, {
 
 $.Component = function(name, options, callback) {
 
-    if (arguments.length < 1)
+    if (arguments.length < 1) {
         return Components;
+    }
 
-    if (arguments.length < 2)
+    if (arguments.length < 2) {
         return Components[name];
+    }
 
     // Create a global namespace for this component
     return window[name] = Components[name] = new Component(name, options, callback);
