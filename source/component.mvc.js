@@ -92,8 +92,8 @@ $.require()
 
             // Getter (all component views)
             if (args.length < 1) {
-                return $.grep($.template.templates, function(template){
-                    return template.indexOf(templatePrefix)==0;
+                return $.grep($.template(), function(template, templateName){
+                    return templateName.indexOf(templatePrefix)==0;
                 });
             }
 
