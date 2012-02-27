@@ -53,56 +53,63 @@ $.require()
         };
 
         Component.prototype.Controllers = function() {
-            var args = arguments;
-            args[0] = this.name + '.Controllers.' + args[0];
 
-            if (args.length < 2)
-            {
+            var self = this,
+                args = $.makeArray(arguments),
+                name = this.name + '.Controllers.' + args[0],
+                staticProps,
+                protoFactory;
+
+            // Getter
+            if (args.length==1) {
                 return $.String.getObject(args[0]);
             };
+
+            // Setter
+            if (args.length > 2) {
+                staticProps = args[1],
+                protoFactory = args[2]
+            } else {
+                staticProps = {},
+                protoFactory = args[1]
+            }
+
+            $.extend(staticProps, {
+                component: self
+            });
 
             // TODO: Destroy controller function
             this.Controllers.destroy = function(){};
 
-            return $.Controller.apply(this, args);
+            return $.Controller.apply(this, [name, staticProps, protoFactory]);
         };
 
-        // TODO: Setter.
         Component.prototype.Views = function(name) {
 
-            // Append component identifier
-            name = this.name + '.Views.' + name;
-            name = name.toLowerCase();
+            var self = this,
+                args = $.makeArray(arguments),
+                templatePrefix = self.name.toLowerCase() + "/";
 
-            // If template does not exist in <script> tag, use the url.
-            if ($('script[type="text/ejs"][id="'+name+'"]').length < 1)
-            {
-                name = self.ejsPath + name;
-            };
+            // Getter (all component views)
+            if (args.length < 1) {
+                return $.grep($.template.templates, function(template){
+                    return template.indexOf(templatePrefix)==0;
+                });
+            }
 
-            // Replace the original argument
-            var args = $.makeArray(arguments);
-            args[0] = name;
+            // Add template prefix
+            name = templatePrefix + name;
 
-            return $.View.apply(this, args);
-        };
+            // Getter
+            if (args.length==1) {
+                return $.template(name);
+            }
 
-        // Depecrated.
-        Component.prototype.View = function(name) {
-            // Append component identifier
-            name = this.name.toLowerCase() + '.' + name;
-
-            // If template does not exist in <script> tag, use the url.
-            if ($('script[type="text/ejs"][id="'+name+'"]').length < 1)
-            {
-                name = self.ejsPath + name;
-            };
-
-            // Replace the original argument
-            var args = $.makeArray(arguments);
-            args[0] = name;
-
-            return $.View.apply(this, args);
+            // Setter
+            if (args.length > 1) {
+                args[0] = name;
+                return $.View.apply(this, args);
+            }
         };
 
         module.resolve();
