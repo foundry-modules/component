@@ -33,6 +33,7 @@ var Component = function(name, options, callback) {
     self.templatePath  = options.templatePath || options.scriptPath;
     self.languagePath  = options.languagePath || self.baseUrl + '&tmpl=component&no_html=1&controller=lang&task=getLanguage';
     self.viewPath      = options.viewPath     || self.baseUrl + '&tmpl=component&no_html=1&controller=themes&task=getAjaxTemplate';
+    self.prefix        = self.name.toLowerCase() + "/";
 
 
     self.isReady       = false;
@@ -98,6 +99,23 @@ $.extend(Component.prototype, {
         });
     },
 
+    template: function(name) {
+
+        var self = this;
+
+        if (name==undefined) {
+
+            return $.grep($.template(), function(template) {
+
+                return template.indexOf(self.prefix)==0;
+            });
+        }
+
+        arguments[0] = self.prefix + name;
+
+        return $.template.apply(null, arguments);
+    },
+
     require: function(options) {
 
         var self = this,
@@ -145,9 +163,7 @@ $.extend(Component.prototype, {
 
                 options = {path: self.templatePath},
 
-                names = [],
-
-                templatePrefix = self.name.toLowerCase() + "/";
+                names = [];
 
             if ($.isPlainObject(args[0])) {
 
@@ -162,7 +178,7 @@ $.extend(Component.prototype, {
 
             names = $.map(names, function(name) {
 
-                templateName = templatePrefix + name;
+                templateName = self.prefix + name;
 
                 return [[templateName, name]];
             });
@@ -178,9 +194,7 @@ $.extend(Component.prototype, {
 
                 options = {path: self.viewPath},
 
-                names = [],
-
-                templatePrefix = self.name.toLowerCase() + "/";
+                names = [];
 
             if ($.isPlainObject(args[0])) {
 
@@ -198,7 +212,7 @@ $.extend(Component.prototype, {
                 var templates = $.template();
 
                 names = $.grep(names, function(name){
-                    return !templates[templatePrefix + name];
+                    return !templates[self.prefix + name];
                 });
             }
 
@@ -222,12 +236,12 @@ $.extend(Component.prototype, {
 
                         $.each(templates, function(i, template) {
 
-                            $.template(templatePrefix + template.name, template.content);
+                            $.template(self.prefix + template.name, template.content);
                         });
                     }
                 });
 
-            task.name = "View " + templatePrefix + names.join(", " + templatePrefix);
+            task.name = "View " + self.prefix + names.join(", " + self.prefix);
 
             batch.addTask(task);
 
