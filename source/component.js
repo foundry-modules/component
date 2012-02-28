@@ -185,14 +185,17 @@ $.extend(Component.prototype, {
                 options = $.extend(args[0], options);
 
                 names = args.slice(1);
+
+            } else {
+
+                names = args;
             }
 
-            if (names < 1) {
+            if (names.length < 1) {
                 return require;
             }
 
-            batch.addTask(
-                $.ajax(
+            var task = $.ajax(
                 {
                     url: options.path,
 
@@ -211,8 +214,11 @@ $.extend(Component.prototype, {
                             $.template(templatePrefix + template.name, template.content);
                         });
                     }
-                })
-            );
+                });
+
+            task.name = "View " + templatePrefix + names.join(", " + templatePrefix);
+
+            batch.addTask(task);
 
             return require;
         };
