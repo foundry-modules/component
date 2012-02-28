@@ -80,9 +80,6 @@ $.require()
                 component: self
             });
 
-            // TODO: Destroy controller function
-            this.Controllers.destroy = function(){};
-
             return $.Controller.apply(this, [name, staticProps, protoFactory]);
         };
 
