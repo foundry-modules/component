@@ -103,6 +103,7 @@ $.extend(Component.prototype, {
 
         var self = this;
 
+        // Get all component templates
         if (name==undefined) {
 
             return $.grep($.template(), function(template) {
@@ -111,8 +112,10 @@ $.extend(Component.prototype, {
             });
         }
 
+        // Prepend component prefix
         arguments[0] = self.prefix + name;
 
+        // Getter or setter
         return $.template.apply(null, arguments);
     },
 
