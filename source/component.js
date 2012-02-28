@@ -191,6 +191,15 @@ $.extend(Component.prototype, {
                 names = args;
             }
 
+            if (!options.reload) {
+
+                var templates = $.template();
+
+                names = $.grep(names, function(name){
+                    return !templates[templatePrefix + name];
+                });
+            }
+
             if (names.length < 1) {
                 return require;
             }
