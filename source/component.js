@@ -26,12 +26,14 @@ var Component = function(name, options, callback) {
 
     self.environment   = options.environment || Foundry.environment;
     self.debug         = (self.environment=='development');
+    self.language      = "en";
 
     self.baseUrl       = options.baseUrl      || Foundry.indexUrl + "?option=" + this.componentName;
     self.scriptPath    = options.scriptPath   || Foundry.rootPath + "media/" + this.componentName + ((self.debug) ? "/scripts_/" : "/scripts/");
     self.templatePath  = options.templatePath || options.scriptPath;
-    self.languagePath  = options.languagePath || self.baseUrl + '&tmpl=component&no_html=1&controller=lang&task=getLanguage';
-    self.viewPath      = options.viewPath     || self.baseUrl + '&tmpl=component&no_html=1&controller=themes&task=getAjaxTemplate';
+    self.languagePath  = options.languagePath || self.baseUrl + '&tmpl=component&no_html=1&controller=lang&task=getLanguage&lang=' + self.language;
+    self.viewPath      = options.viewPath     || self.baseUrl + '&tmpl=component&no_html=1&controller=themes&task=getAjaxTemplate&lang=' + self.language;
+
 
     self.isReady       = false;
     self.dependencies  = $.Deferred();
