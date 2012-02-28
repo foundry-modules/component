@@ -199,7 +199,7 @@ $.extend(Component.prototype, {
                     dataType: "json",
 
                     data: {
-                        templates: names
+                        names: names
                     }
                 })
                 .success(function(templates) {
