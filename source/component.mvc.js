@@ -52,11 +52,11 @@ $.require()
             return $.server(options);
         };
 
-        Component.prototype.Controllers = function() {
+        Component.prototype.Controller = function() {
 
             var self = this,
                 args = $.makeArray(arguments),
-                name = this.name + '.Controllers.' + args[0],
+                name = this.name + '.Controller.' + args[0],
                 staticProps,
                 protoFactory;
 
@@ -74,6 +74,8 @@ $.require()
                 protoFactory = args[1]
             }
 
+            // Map component as a static property
+            // of the controller class
             $.extend(staticProps, {
                 component: self
             });
@@ -84,32 +86,20 @@ $.require()
             return $.Controller.apply(this, [name, staticProps, protoFactory]);
         };
 
-        Component.prototype.Views = function(name) {
+        Component.prototype.View = function(name) {
 
-            var self = this,
-                args = $.makeArray(arguments),
-                templatePrefix = self.name.toLowerCase() + "/";
+            var self = this;
 
-            // Getter (all component views)
-            if (args.length < 1) {
-                return $.grep($.template(), function(template, templateName){
-                    return templateName.indexOf(templatePrefix)==0;
-                });
+            // Gett all component views
+            if (arguments.length < 1) {
+                return self.template();
             }
 
-            // Add template prefix
-            name = templatePrefix + name;
+            // Prepend component prefix
+            arguments[0] = self.prefix + arguments[0];
 
-            // Getter
-            if (args.length==1) {
-                return $.template(name);
-            }
-
-            // Setter
-            if (args.length > 1) {
-                args[0] = name;
-                return $.View.apply(this, args);
-            }
+            // Getter or setter
+            return $.View.apply(this, arguments);
         };
 
         module.resolve();
