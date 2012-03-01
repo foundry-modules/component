@@ -11,30 +11,75 @@
  *
  */
 
-var Components = {};
+var Component = $.Component = function(name, options, callback) {
 
-var Component = function(name, options, callback) {
+    if (arguments.length < 1) {
+        return Component.registry;
+    }
+
+    if (arguments.length < 2) {
+        return Component.registry[name];
+    }
+
+    return Component.register(name, options, callback);
+}
+
+Component.registry = {};
+
+Component.proxy = function(component, property, value) {
+
+    // If it's a method
+    if ($.isFunction(value)) {
+
+        // Change the "this" context to the component itself
+        component[property] = $.proxy(value, component);
+
+    } else {
+
+        component[property] = value;
+    }
+}
+
+Component.register = function(name, options, callback) {
+
+    var self =
+
+        // Put it in component registry
+        Component.registry[name] =
+
+        // Set it to the global namespace
+        window[name] =
+
+        // When called as a function, it will return the correct jQuery object.
+        function(command) {
+            return ($.isFunction(command)) ? command($) : component;
+        };
 
     // @TODO: Component should be a deferred object, replace $.module("component/mvc").done().
 
-    var self = this;
+    // Extend component with properties in component prototype
+    $.each(Component.prototype, function(property, value) {
 
+        Component.proxy(self, property, value);
+    });
+
+    self.$             = $;
     self.options       = options;
-    self.name          = name;
-    self.componentName = "com_" + this.name.toLowerCase();
+    self.className     = name;
+    self.identifier    = name.toLowerCase();
+    self.componentName = "com_" + self.identifier;
     self.version       = options.version;
 
-    self.environment   = options.environment || Foundry.environment;
+    self.environment   = options.environment  || $.environment;
     self.debug         = (self.environment=='development');
     self.language      = "en";
 
-    self.baseUrl       = options.baseUrl      || Foundry.indexUrl + "?option=" + this.componentName;
-    self.scriptPath    = options.scriptPath   || Foundry.rootPath + "media/" + this.componentName + ((self.debug) ? "/scripts_/" : "/scripts/");
+    self.baseUrl       = options.baseUrl      || $.indexUrl + "?option=" + self.componentName;
+    self.scriptPath    = options.scriptPath   || $.rootPath + "media/" + self.componentName + ((self.debug) ? "/scripts_/" : "/scripts/");
     self.templatePath  = options.templatePath || options.scriptPath;
     self.languagePath  = options.languagePath || self.baseUrl + '&tmpl=component&no_html=1&controller=lang&task=getLanguage';
     self.viewPath      = options.viewPath     || self.baseUrl + '&tmpl=component&no_html=1&controller=themes&task=getAjaxTemplate';
-    self.prefix        = self.name.toLowerCase() + "/";
-
+    self.prefix        = self.identifier + "/";
 
     self.isReady       = false;
     self.dependencies  = $.Deferred();
@@ -62,6 +107,17 @@ var Component = function(name, options, callback) {
     } else {
         resolveComponent();
     }
+}
+
+Component.extend = function(property, value) {
+
+    // For later components
+    Component.prototype[property] = value;
+
+    // For existing components
+    $.each(Component.registry, function(name, component) {
+        Component.proxy(component, property, value);
+    });
 }
 
 $.extend(Component.prototype, {
@@ -150,7 +206,7 @@ $.extend(Component.prototype, {
                         // and relative paths.
                         /^(\/|\.)/.test(name)) return name;
 
-                    var moduleName = self.name.toLowerCase() + "/" + name,
+                    var moduleName = self.prefix + name,
                         moduleUrl = self.scriptPath + name + ".js"; // TODO: Get extension from options
 
                     return [[moduleName, moduleUrl, true]];
@@ -317,7 +373,7 @@ $.extend(Component.prototype, {
             return;
         }
 
-        name = self.name.toLowerCase() + "/" + name;
+        name = self.prefix + name;
 
         return $.module.apply(null, [name, function(){
 
@@ -332,17 +388,3 @@ $.extend(Component.prototype, {
         }]);
     }
 });
-
-$.Component = function(name, options, callback) {
-
-    if (arguments.length < 1) {
-        return Components;
-    }
-
-    if (arguments.length < 2) {
-        return Components[name];
-    }
-
-    // Create a global namespace for this component
-    return window[name] = Components[name] = new Component(name, options, callback);
-};

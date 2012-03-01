@@ -13,7 +13,8 @@ $.require()
     )
     .done(function() {
 
-        Component.prototype.ajax = function(namespace, params, callback) {
+        $.Component.extend("ajax", function(namespace, params, callback) {
+
             var self = this;
 
             var options = {
@@ -50,13 +51,13 @@ $.require()
                 options.success = callback;
 
             return $.server(options);
-        };
+        });
 
-        Component.prototype.Controller = function() {
+        $.Component.extend("Controller", function() {
 
             var self = this,
                 args = $.makeArray(arguments),
-                name = this.name + '.Controller.' + args[0],
+                name = self.className + '.Controller.' + args[0],
                 staticProps,
                 protoFactory;
 
@@ -81,9 +82,9 @@ $.require()
             });
 
             return $.Controller.apply(this, [name, staticProps, protoFactory]);
-        };
+        });
 
-        Component.prototype.View = function(name) {
+        $.Component.extend("View", function(name) {
 
             var self = this;
 
@@ -97,7 +98,7 @@ $.require()
 
             // Getter or setter
             return $.View.apply(this, arguments);
-        };
+        });
 
         module.resolve();
 
