@@ -18,7 +18,7 @@ $.require()
             var self = this;
 
             var options = {
-                    url: Foundry.indexUrl,
+                    url: $.indexUrl,
                     data: $.extend(
                         params,
                         {
