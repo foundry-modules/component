@@ -1,19 +1,23 @@
-SRC_DIR = source
-BUILD_DIR = build
-FOUNDRY_DIR = ../..
-PRODUCTION_DIR = ${FOUNDRY_DIR}/scripts
-DEVELOPMENT_DIR = ${FOUNDRY_DIR}/scripts_
-UGLIFY = uglifyjs --unsafe -nc
+include ../../build/modules.mk
 
-BASE_FILES = ${FOUNDRY_DIR}/build/foundry_intro.js \
-${SRC_DIR}/component.js \
-${SRC_DIR}/component.mvc.js \
-${FOUNDRY_DIR}/build/foundry_outro.js
+MODULE = component
+FILENAME = ${MODULE}.js
+RAWFILE = ${DEVELOPMENT_DIR}/${MODULE}.raw.js
 
-all: body min
+SOURCE = ${SOURCE_DIR}/${MODULE}.js \
+${SOURCE_DIR}/${MODULE}.mvc.js
 
-body:
-	cat ${BASE_FILES} > ${DEVELOPMENT_DIR}/component.js
+PRODUCTION = ${PRODUCTION_DIR}/${FILENAME}
+DEVELOPMENT = ${DEVELOPMENT_DIR}/${FILENAME}
 
-min:
-	${UGLIFY} ${DEVELOPMENT_DIR}/component.js > ${PRODUCTION_DIR}/component.js
+all: raw module clean
+
+module:
+	${WRAP} ${RAWFILE} > ${DEVELOPMENT}
+	${UGLIFYJS} ${DEVELOPMENT} > ${PRODUCTION}
+
+raw:
+	cat ${SOURCE} > ${RAWFILE}
+
+clean:
+	rm -fr ${RAWFILE}
