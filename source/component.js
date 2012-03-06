@@ -42,6 +42,10 @@ Component.proxy = function(component, property, value) {
 
 Component.register = function(name, options, callback) {
 
+    // If an abstract component was found,
+    // extract the execution queue.
+    var queue = (window[name]) ? window[name].queue || [] : [];
+
     var self =
 
         // Put it in component registry
@@ -52,6 +56,7 @@ Component.register = function(name, options, callback) {
 
         // When called as a function, it will return the correct jQuery object.
         function(command) {
+
             return ($.isFunction(command)) ? command($) : component;
         };
 
@@ -107,6 +112,26 @@ Component.register = function(name, options, callback) {
     } else {
         resolveComponent();
     }
+
+    // Go through each execution queue and run it
+    $.each(queue, function(i, func) {
+
+        if ($.isPlainObject(func)) {
+
+            self[func.method].apply(self, func.args);
+        }
+
+        if ($.isArray(func)) {
+
+            var chain = func,
+                context = self;
+
+            $.each(chain, function(i, func) {
+
+                context = context[func.method].apply(context, func.args);
+            });
+        }
+    });
 }
 
 Component.extend = function(property, value) {
@@ -122,12 +147,9 @@ Component.extend = function(property, value) {
 
 $.extend(Component.prototype, {
 
-    run: function(func) {
+    run: function(command) {
 
-        if (!$.isFunction(func))
-            return;
-
-        return func.call(self, $);
+        return ($.isFunction(command)) ? command($) : component;
     },
 
     ready: function(callback) {
