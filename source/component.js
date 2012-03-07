@@ -357,6 +357,10 @@ $.extend(Component.prototype, {
                 options = $.extend(args[0], options);
 
                 names = args.slice(1);
+
+            } else {
+
+                names = args;
             }
 
             return __language.apply(require, [options].concat(names));
