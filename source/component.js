@@ -288,39 +288,65 @@ $.extend(Component.prototype, {
                 names = args;
             }
 
+
+            var loaders = [];
+
             if (!options.reload) {
 
                 var templates = $.template();
 
                 names = $.grep(names, function(name){
-                    return !templates[self.prefix + name];
+
+                    var templateName = self.prefix + name,
+                        loader = $.template.loaders[templateName];
+
+                    if (!loader) {
+
+                        $.template.loaders[templateName] = $.Deferred();
+
+                    } else {
+
+                        loaders.push(loader);
+                    }
+
+                    return !loader;
                 });
+
+                $.template.loaders[self.prefix + name]
             }
 
             if (names.length < 1) {
                 return require;
             }
 
-            var task = $.ajax(
-                {
-                    url: options.path,
+            var task = $.when.apply(null, loaders.concat(
+                [
+                    $.ajax(
+                        {
+                            url: options.path,
 
-                    dataType: "json",
+                            dataType: "json",
 
-                    data: {
-                        names: names
-                    }
-                })
-                .success(function(templates) {
+                            data: {
+                                names: names
+                            }
+                        })
+                        .success(function(templates) {
 
-                    if ($.isArray(templates)) {
+                            if ($.isArray(templates)) {
 
-                        $.each(templates, function(i, template) {
+                                $.each(templates, function(i, template) {
 
-                            $.template(self.prefix + template.name, template.content);
-                        });
-                    }
-                });
+                                    var templateName = self.prefix + template.name;
+
+                                    $.template(templateName, template.content);
+
+                                    $.template.loaders[templateName].resolveWith($, [template.content]);
+                                });
+                            }
+                        })
+                ])
+            );
 
             task.name = "View " + self.prefix + names.join(", " + self.prefix);
 
