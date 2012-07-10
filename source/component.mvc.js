@@ -28,11 +28,20 @@ $.require()
                     )
                 };
 
-            options = $.extend(true, options, this.options.ajax);
+            options = $.extend(true, options, self.options.ajax);
+
+            // Look for an updated token replaced by Joomla on page load and use
+            // that token instead. This is for sites where cache is turned on.
+            var token = $("input#" + self.identifier + "-token").val();
+
+            if (token) {
+                options.data[token] = 1;
+            }
 
             // This is for server-side function arguments
-            if (options.data.hasOwnProperty('args'))
+            if (options.data.hasOwnProperty('args')) {
                 options.data.args = $.toJSON(options.data.args);
+            }
 
             if (callback.type=='jsonp')
             {
@@ -44,11 +53,13 @@ $.require()
                 callback.crossDomain = true;
             }
 
-            if ($.isPlainObject(callback))
+            if ($.isPlainObject(callback)) {
                 $.extend(options, callback);
+            }
 
-            if ($.isFunction(callback))
+            if ($.isFunction(callback)) {
                 options.success = callback;
+            }
 
             return $.server(options);
         });
