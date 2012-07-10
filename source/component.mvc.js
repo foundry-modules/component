@@ -32,7 +32,7 @@ $.require()
 
             // Look for an updated token replaced by Joomla on page load and use
             // that token instead. This is for sites where cache is turned on.
-            var token = $("input#" + self.identifier + "-token").attr("name");
+            var token = $("span#" + self.identifier + "-token input").attr("name");
 
             if (token) {
                 options.data[token] = 1;
