@@ -427,16 +427,25 @@ $.extend(Component.prototype, {
 
         name = self.prefix + name;
 
-        return $.module.apply(null, [name, function(){
 
-            var module = this;
+        return (factory) ?
 
-            // Wait until MVC is loaded
-            $.module('component/mvc').done(function(){
+            // Set module
+            $.module.apply(null, [name, function(){
 
-                factory.call(module, $);
+                var module = this;
 
-            });
-        }]);
+                // Wait until MVC is loaded
+                $.module('component/mvc').done(function(){
+
+                    factory.call(module, $);
+
+                });
+            }])
+
+            :
+
+            // Get module
+            $.module(name);
     }
 });
