@@ -201,7 +201,7 @@ $.extend(Component.prototype, {
 
         var self = this,
             options = options || {},
-            require = $.require($.extend(options, {path: self.scriptPath})),
+            require = $.require($.extend({path: self.scriptPath}, options)),
             __library  = require.library,
             __script   = require.script,
             __language = require.language,
@@ -211,8 +211,10 @@ $.extend(Component.prototype, {
 
         require.script = requireScript = function() {
 
-            // Translate module names
-            var names = $.makeArray(arguments),
+            var batch = this,
+
+                // Translate module names
+                names = $.makeArray(arguments),
 
                 args = $.map(names, function(name) {
 
@@ -229,7 +231,7 @@ $.extend(Component.prototype, {
                         /^(\/|\.)/.test(name)) return name;
 
                     var moduleName = self.prefix + name,
-                        moduleUrl = self.scriptPath + name + ".js"; // TODO: Get extension from options
+                        moduleUrl = $.uri(batch.options.path).toPath('./' + name + '.js').toString(); // Get extension from options
 
                     return [[moduleName, moduleUrl, true]];
                 });
