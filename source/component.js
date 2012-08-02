@@ -201,7 +201,7 @@ $.extend(Component.prototype, {
 
         var self = this,
             options = options || {},
-            require = $.require($.extend({path: self.scriptPath}, options)),
+            require = $.require($.extend(options, {path: self.scriptPath})),
             __library  = require.library,
             __script   = require.script,
             __language = require.language,
@@ -211,10 +211,8 @@ $.extend(Component.prototype, {
 
         require.script = requireScript = function() {
 
-            var batch = this,
-
-                // Translate module names
-                names = $.makeArray(arguments),
+            // Translate module names
+            var names = $.makeArray(arguments),
 
                 args = $.map(names, function(name) {
 
@@ -231,7 +229,7 @@ $.extend(Component.prototype, {
                         /^(\/|\.)/.test(name)) return name;
 
                     var moduleName = self.prefix + name,
-                        moduleUrl = $.uri(batch.options.path).toPath('./' + name + '.js').toString(); // Get extension from options
+                        moduleUrl = self.scriptPath + name + ".js"; // TODO: Get extension from options
 
                     return [[moduleName, moduleUrl, true]];
                 });
@@ -269,6 +267,9 @@ $.extend(Component.prototype, {
             return __template.apply(require, [options].concat(names));
         };
 
+        var viewCollector = [];
+
+
         require.view = function() {
 
             var batch = this,
@@ -289,7 +290,6 @@ $.extend(Component.prototype, {
 
                 names = args;
             }
-
 
             var loaders = [];
 
@@ -317,40 +317,84 @@ $.extend(Component.prototype, {
                 $.template.loaders[self.prefix + name]
             }
 
-            if (names.length < 1) {
-                return require;
+            // If component is not collecting views
+            if (!self.viewCollector) {
+
+                // Then start collecting
+                self.viewCollector = $.Deferred();
+
+                // Create an array of names
+                self.viewCollector.names = [];
+
+                // Create an array of loaders
+                self.viewCollector.loaders = [];
+
+                self.viewCollector.timer =
+
+                    setTimeout(function() {
+
+                        // Reassign myself to a private variable
+                        var collector = self.viewCollector;
+
+                        // I will now stop collecting, and wait for
+                        // subsequent view() call to wake me up.
+                        self.viewCollector = false;
+
+                        // If all view names have been resolved
+                        if (collector.names.length > 0) {
+
+                            collector.loaders =
+                                collector.loaders.concat(
+                                    [
+                                        $.ajax(
+                                            {
+                                                url: options.path,
+
+                                                dataType: "json",
+
+                                                data: {
+                                                    names: collector.names
+                                                }
+                                            })
+                                            .success(function(templates) {
+
+                                                if ($.isArray(templates)) {
+
+                                                    $.each(templates, function(i, template) {
+
+                                                        var templateName = self.prefix + template.name;
+
+                                                        $.template(templateName, template.content);
+
+                                                        $.template.loaders[templateName].resolveWith($, [template.content]);
+                                                    });
+                                                }
+                                            })
+                                    ]
+                                );
+                        }
+
+                        $.when.apply(null, loaders)
+                            .done(function() {
+                                collector.resolve();
+                            })
+                            .fail(function(){
+                                collector.reject();
+                            });
+
+                    // Joomla session timestamp is per second, we add another 200ms just to be safe.
+                    }, 1200);
             }
 
-            var task = $.when.apply(null, loaders.concat(
-                [
-                    $.ajax(
-                        {
-                            url: options.path,
+            // Warning: There may be a race condition issue.
 
-                            dataType: "json",
+            var task = self.viewCollector;
 
-                            data: {
-                                names: names
-                            }
-                        })
-                        .success(function(templates) {
+            task.names = task.names.concat(names);
 
-                            if ($.isArray(templates)) {
+            task.loaders = task.names.concat(loaders);
 
-                                $.each(templates, function(i, template) {
-
-                                    var templateName = self.prefix + template.name;
-
-                                    $.template(templateName, template.content);
-
-                                    $.template.loaders[templateName].resolveWith($, [template.content]);
-                                });
-                            }
-                        })
-                ])
-            );
-
-            task.name = "View " + self.prefix + names.join(", " + self.prefix);
+            task.name = "View " + self.prefix + task.names.join(", " + self.prefix);
 
             batch.addTask(task);
 
@@ -428,7 +472,6 @@ $.extend(Component.prototype, {
         }
 
         name = self.prefix + name;
-
 
         return (factory) ?
 
