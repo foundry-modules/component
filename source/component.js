@@ -269,9 +269,6 @@ $.extend(Component.prototype, {
             return __template.apply(require, [options].concat(names));
         };
 
-        var viewCollector = [];
-
-
         require.view = function() {
 
             var batch = this,
@@ -292,6 +289,7 @@ $.extend(Component.prototype, {
 
                 names = args;
             }
+
 
             var loaders = [];
 
@@ -319,84 +317,40 @@ $.extend(Component.prototype, {
                 $.template.loaders[self.prefix + name]
             }
 
-            // If component is not collecting views
-            if (!self.viewCollector) {
-
-                // Then start collecting
-                self.viewCollector = $.Deferred();
-
-                // Create an array of names
-                self.viewCollector.names = [];
-
-                // Create an array of loaders
-                self.viewCollector.loaders = [];
-
-                self.viewCollector.timer =
-
-                    setTimeout(function() {
-
-                        // Reassign myself to a private variable
-                        var collector = self.viewCollector;
-
-                        // I will now stop collecting, and wait for
-                        // subsequent view() call to wake me up.
-                        self.viewCollector = false;
-
-                        // If all view names have been resolved
-                        if (collector.names.length > 0) {
-
-                            collector.loaders =
-                                collector.loaders.concat(
-                                    [
-                                        $.ajax(
-                                            {
-                                                url: options.path,
-
-                                                dataType: "json",
-
-                                                data: {
-                                                    names: collector.names
-                                                }
-                                            })
-                                            .success(function(templates) {
-
-                                                if ($.isArray(templates)) {
-
-                                                    $.each(templates, function(i, template) {
-
-                                                        var templateName = self.prefix + template.name;
-
-                                                        $.template(templateName, template.content);
-
-                                                        $.template.loaders[templateName].resolveWith($, [template.content]);
-                                                    });
-                                                }
-                                            })
-                                    ]
-                                );
-                        }
-
-                        $.when.apply(null, loaders)
-                            .done(function() {
-                                collector.resolve();
-                            })
-                            .fail(function(){
-                                collector.reject();
-                            });
-
-                    // Joomla session timestamp is per second, we add another 200ms just to be safe.
-                    }, 1200);
+            if (names.length < 1) {
+                return require;
             }
 
-            // Warning: There may be a race condition issue.
+            var task = $.when.apply(null, loaders.concat(
+                [
+                    $.ajax(
+                        {
+                            url: options.path,
 
-            var task = self.viewCollector;
+                            dataType: "json",
 
-            task.names = task.names.concat(names);
+                            data: {
+                                names: names
+                            }
+                        })
+                        .success(function(templates) {
 
-            task.loaders = task.names.concat(loaders);
+                            if ($.isArray(templates)) {
 
-            task.name = "View " + self.prefix + task.names.join(", " + self.prefix);
+                                $.each(templates, function(i, template) {
+
+                                    var templateName = self.prefix + template.name;
+
+                                    $.template(templateName, template.content);
+
+                                    $.template.loaders[templateName].resolveWith($, [template.content]);
+                                });
+                            }
+                        })
+                ])
+            );
+
+            task.name = "View " + self.prefix + names.join(", " + self.prefix);
 
             batch.addTask(task);
 
@@ -474,6 +428,7 @@ $.extend(Component.prototype, {
         }
 
         name = self.prefix + name;
+
 
         return (factory) ?
 
