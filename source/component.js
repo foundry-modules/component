@@ -269,6 +269,36 @@ $.extend(Component.prototype, {
             return __template.apply(require, [options].concat(names));
         };
 
+        // Override path
+        require.template = function() {
+
+            var args = $.makeArray(arguments),
+
+                options = {path: self.templatePath},
+
+                names = [];
+
+            if ($.isPlainObject(args[0])) {
+
+                options = $.extend(args[0], options);
+
+                names = args.slice(1);
+
+            } else {
+
+                names = args;
+            }
+
+            names = $.map(names, function(name) {
+
+                templateName = self.prefix + name;
+
+                return [[templateName, name]];
+            });
+
+            return __template.apply(require, [options].concat(names));
+        };
+
         require.view = function() {
 
             var batch = this,
@@ -290,67 +320,96 @@ $.extend(Component.prototype, {
                 names = args;
             }
 
+            // Temporarily disabled
+            // if (!options.reload) {
+            // }
 
-            var loaders = [];
+            // If component is not collecting views
+            if (!self.viewCollector) {
 
-            if (!options.reload) {
+                // Then start collecting
+                self.viewCollector = $.Deferred();
 
-                var templates = $.template();
+                // Create an array of names
+                self.viewCollector.names = [];
 
-                names = $.grep(names, function(name){
+                self.viewCollector.timer =
 
-                    var templateName = self.prefix + name,
-                        loader = $.template.loaders[templateName];
+                    setTimeout(function() {
 
-                    if (!loader) {
+                        // Reassign myself to a private variable
+                        var collector = self.viewCollector;
 
-                        $.template.loaders[templateName] = $.Deferred();
+                        // I will now stop collecting, and wait for
+                        // subsequent view() call to wake me up.
+                        self.viewCollector = false;
 
-                    } else {
+                        // Collecting template loaders
+                        collector.loaders = [];
 
-                        loaders.push(loader);
-                    }
+                        $.each(collector.names, function(i, name){
 
-                    return !loader;
-                });
+                            var templateName = self.prefix + name,
+                                templateLoader = $.template.loaders[templateName];
 
-                $.template.loaders[self.prefix + name]
-            }
+                            // If template loader hasn't been created,
+                            if (!templateLoader) {
 
-            if (names.length < 1) {
-                return require;
-            }
-
-            var task = $.when.apply(null, loaders.concat(
-                [
-                    $.ajax(
-                        {
-                            url: options.path,
-
-                            dataType: "json",
-
-                            data: {
-                                names: names
+                                // create template loader.
+                                templateLoader = $.template.loaders[templateName] = $.Deferred();
                             }
-                        })
-                        .success(function(templates) {
 
-                            if ($.isArray(templates)) {
+                            // Push it to our collection
+                            collector.loaders.push(templateLoader);
+                        });
 
-                                $.each(templates, function(i, template) {
+                        if (collector.names.length > 0) {
 
-                                    var templateName = self.prefix + template.name;
+                            $.ajax(
+                                {
+                                    url: options.path,
 
-                                    $.template(templateName, template.content);
+                                    dataType: "json",
 
-                                    $.template.loaders[templateName].resolveWith($, [template.content]);
+                                    data: {
+                                        names: collector.names
+                                    }
+                                })
+                                .done(function(templates) {
+
+                                    if ($.isArray(templates)) {
+
+                                        $.each(templates, function(i, template) {
+
+                                            var templateName = self.prefix + template.name;
+
+                                            $.template(templateName, template.content);
+
+                                            $.template.loaders[templateName].resolveWith($, [template.content]);
+                                        });
+                                    }
                                 });
-                            }
-                        })
-                ])
-            );
+                        }
 
-            task.name = "View " + self.prefix + names.join(", " + self.prefix);
+                        $.when.apply(null, collector.loaders)
+                            .done(function() {
+                                collector.resolve();
+                            })
+                            .fail(function(){
+                                collector.reject();
+                            });
+
+                    // Joomla session timestamp is per second, we add another 200ms just to be safe.
+                    }, 1200);
+            }
+
+            // Warning: There may be a race condition issue.
+
+            var task = self.viewCollector;
+
+            task.names = task.names.concat(names);
+
+            task.name = "View " + self.prefix + task.names.join(", " + self.prefix);
 
             batch.addTask(task);
 
