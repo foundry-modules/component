@@ -269,36 +269,6 @@ $.extend(Component.prototype, {
             return __template.apply(require, [options].concat(names));
         };
 
-        // Override path
-        require.template = function() {
-
-            var args = $.makeArray(arguments),
-
-                options = {path: self.templatePath},
-
-                names = [];
-
-            if ($.isPlainObject(args[0])) {
-
-                options = $.extend(args[0], options);
-
-                names = args.slice(1);
-
-            } else {
-
-                names = args;
-            }
-
-            names = $.map(names, function(name) {
-
-                templateName = self.prefix + name;
-
-                return [[templateName, name]];
-            });
-
-            return __template.apply(require, [options].concat(names));
-        };
-
         require.view = function() {
 
             var batch = this,
