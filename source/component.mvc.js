@@ -7,6 +7,7 @@ $.require()
         'server',
         'mvc/controller',
         'mvc/model',
+        'mvc/model.list',
         'mvc/view',
         'mvc/view.ejs',
         'mvc/lang.json'
@@ -93,6 +94,68 @@ $.require()
             });
 
             return $.Controller.apply(this, [name, staticProps, protoFactory]);
+        });
+
+        $.Component.extend("Model", function() {
+            var self = this,
+                args = $.makeArray(arguments),
+                name = self.className + '.Model.' + args[0],
+                staticProps,
+                protoFactory;
+
+            // Getter
+            if (args.length==1) {
+                return $.String.getObject(args[0]);
+            }
+
+            if( args.length==2) {
+                staticProps = {},
+                protoFactory = args[1]
+            }
+
+            if( args.length > 2) {
+                staticProps = args[1],
+                protoFactory = args[2]
+            }
+
+            // Map component as a static property
+            // of the model class
+            $.extend(staticProps, {
+                component: self
+            });
+
+            return $.Model.apply(this, [name, staticProps, protoFactory]);
+        });
+
+        $.Component.extend("Model.List", function() {
+            var self = this,
+                args = $.makeArray(arguments),
+                name = self.className + '.Model.List.' + args[0],
+                staticProps,
+                protoFactory;
+
+            // Getter
+            if (args.length==1) {
+                return $.String.getObject(args[0]);
+            }
+
+            if( args.length==2) {
+                staticProps = {},
+                protoFactory = args[1]
+            }
+
+            if( args.length > 2) {
+                staticProps = args[1],
+                protoFactory = args[2]
+            }
+
+            // Map component as a static property
+            // of the model class
+            $.extend(staticProps, {
+                component: self
+            });
+
+            return $.Model.List.apply(this, [name, staticProps, protoFactory]);
         });
 
         $.Component.extend("View", function(name) {
