@@ -86,6 +86,9 @@ Component.register = function(name, options, callback) {
     self.viewPath      = options.viewPath     || self.baseUrl + '&tmpl=component&no_html=1&controller=themes&task=getAjaxTemplate';
     self.prefix        = self.identifier + "/";
 
+    self.optimizeResources = options.optimizeResources || (self.environment==="optimized") ? true : false;
+    self.resourcePath      = options.resourcePath || self.baseUrl + '&tmpl=component&no_html=1&controller=foundry&task=getResource';
+
     self.isReady       = false;
     self.dependencies  = $.Deferred();
 
