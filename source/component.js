@@ -86,8 +86,9 @@ Component.register = function(name, options, callback) {
     self.viewPath      = options.viewPath     || self.baseUrl + '&tmpl=component&no_html=1&controller=themes&task=getAjaxTemplate';
     self.prefix        = self.identifier + "/";
 
-    self.optimizeResources = options.optimizeResources || (self.environment==="optimized") ? true : false;
-    self.resourcePath      = options.resourcePath || self.baseUrl + '&tmpl=component&no_html=1&controller=foundry&task=getResource';
+    self.optimizeResources  = options.optimizeResources || (self.environment==="optimized") ? true : false;
+    self.resourcePath       = options.resourcePath || self.baseUrl + '&tmpl=component&no_html=1&controller=foundry&task=getResource';
+    self.resourceCollectionInterval = 1200; // Joomla session timestamp is per second, we add another 200ms just to be safe.
 
     self.isReady       = false;
     self.dependencies  = $.Deferred();
@@ -211,6 +212,102 @@ $.extend(Component.prototype, {
             __template = require.template,
             __done     = require.done,
             requireScript;
+
+        // Resource call should NOT be called directly.
+        // .resource({type: "view", name: "photo.item", loader: deferredObject})
+        require.resource = function(resource) {
+
+            // If this is not a valid resource object, skip.
+            if (!$.isPlainObject(resource)) return;
+            if (!resource.type || !resource.name || !$.isDeferred(resource.loader)) return;
+
+            var batch = this;
+
+            // Get resource collector
+            var resourceCollector = self.resourceCollector;
+
+            // If we have started collecting resources
+            if (resourceCollector) {
+
+                // Create a resource id
+                var id = resource.id = $.uid("Resource");
+
+                // Add to the loader map
+                // - to be used to resolve the loader with the returned content
+                resourceCollector.loaders[id] = resource.loader;
+
+                // Add to the loader list
+                // - to be used with $.when()
+                resourceCollector.loaderList.push(resource.loader);
+
+                // Remove the reference to the loader
+                // - so the loader doesn't get included in the manifest that gets sent to the server
+                delete resource.loaders
+
+                // Then add it to our list of resource manifest
+                resourceCollector.manifest.push(resource);
+
+            // If we haven't started collecting resources
+            } else {
+
+                // Then start collecting resources
+                var resourceCollector = self.resourceCollector = $.Deferred();
+
+                $.extend(resourceCollector, {
+
+                    name: $.uid("ResourceCollector");
+
+                    manifest: [],
+
+                    loaderList: [],
+
+                    loaders: [],
+
+                    load: function() {
+
+                        // End this batch of resource collecting
+                        delete self.resourceCollector;
+
+                        $.ajax(
+                            {
+                                url: self.options.resourcePath,
+                                dataType: "json",
+                                data: {
+                                    resource: resource.manifest
+                                }
+                            })
+                            .done(function(manifest) {
+
+                                if (!$.isArray(manifest)) {
+                                    resourceCollector.reject("Server did not return a valid resource manifest.");
+                                    return;
+                                }
+
+                                $.each(manifest, function(i, resource) {
+
+                                    var content = resource.content;
+
+                                    resourceCollector.loaders[resource.id]
+                                        [content!==null ? "resolve" : "reject"]
+                                        (content);
+                                });
+                            });
+
+                        // Resolve resource collector when all is done
+                        $.when.apply(null, resourceCollector.loaderList)
+                            .done(resourceCollector.resolve)
+                            .fail(resourceCollector.reject);
+                    }
+                });
+
+                setTimeout(resourceCollector.load, self.options.resourceCollectionInterval);
+            }
+
+            // Note: Only resource loaders are batch tasks, not resource collectors.
+            // var task = resourceCollector;
+            // batch.addTask(task);
+            return require;
+        };
 
         require.script = requireScript = function() {
 
