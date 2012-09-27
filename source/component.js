@@ -201,17 +201,26 @@ $.extend(Component.prototype, {
         return $.template.apply(null, arguments);
     },
 
+    // Component require extends $.require with the following additional methods:
+    // - resource()
+    // - view()
+    // - language()
+    //
+    // It also changes the behaviour of existing methods to load in component-specific behaviour.
     require: function(options) {
 
         var self = this,
+
             options = options || {},
+
             require = $.require($.extend({path: self.scriptPath}, options)),
-            __library  = require.library,
-            __script   = require.script,
-            __language = require.language,
-            __template = require.template,
-            __done     = require.done,
-            requireScript;
+
+            _require = {},
+
+            // Keep a copy of the original method so the duck punchers below can use it.
+            $.each(["library", "script", "language", "template", "done"], function(i, method){
+                _require[method] = require[method];
+            });
 
         // Resource call should NOT be called directly.
         // .resource({type: "view", name: "photo.item", loader: deferredObject})
@@ -309,115 +318,49 @@ $.extend(Component.prototype, {
             return require;
         };
 
-        require.script = requireScript = function() {
-
-            var batch = this,
-
-                // Translate module names
-                names = $.makeArray(arguments),
-
-                args = $.map(names, function(name) {
-
-                        // Ignore script settings
-                    if ($.isPlainObject(name) ||
-
-                        // and module definitions
-                        $.isArray(name) ||
-
-                        // and urls
-                        $.isUrl(name) ||
-
-                        // and relative paths.
-                        /^(\/|\.)/.test(name)) return name;
-
-                    var moduleName = self.prefix + name,
-                        moduleUrl = $.uri(batch.options.path).toPath('./' + name + '.js').toString(); // Get extension from options
-
-                    return [[moduleName, moduleUrl, true]];
-                });
-
-            return __script.apply(require, args);
-        };
-
-        // Override path
-        require.template = function() {
-
-            var args = $.makeArray(arguments),
-
-                options = {path: self.templatePath},
-
-                names = [];
-
-            if ($.isPlainObject(args[0])) {
-
-                options = $.extend(args[0], options);
-
-                names = args.slice(1);
-
-            } else {
-
-                names = args;
-            }
-
-            names = $.map(names, function(name) {
-
-                templateName = self.prefix + name;
-
-                return [[templateName, name]];
-            });
-
-            return __template.apply(require, [options].concat(names));
-        };
-
         require.view = function() {
 
-            var batch = this,
-                args = $.makeArray(arguments),
-                options = {path: self.viewPath},
-                names = [];
+            var batch   = this,
 
-            if ($.isPlainObject(args[0])) {
-                options = $.extend(args[0], options);
-                names = args.slice(1);
-            } else {
-                names = args;
-            }
+                request = $.expand(arguments, {path: self.viewPath}),
 
-            var loaders = {};
+                loaders = {},
 
-            names = $.map(names, function(name) {
+                options = request.options,
 
-                // Get template loader
-                var absoluteName = self.prefix + name,
-                    loader = $.template.loader(absoluteName);
+                names = $.map(request.names, function(name) {
 
-                // See if we need to reload this template
-                if (/resolved|failed/.test(loader.state()) && options.reload) {
-                    loader = loader.reset();
-                }
+                    // Get template loader
+                    var absoluteName = self.prefix + name,
+                        loader = $.template.loader(absoluteName);
 
-                // Add template loader as a task of this batch
-                batch.addTask(loader);
+                    // See if we need to reload this template
+                    if (/resolved|failed/.test(loader.state()) && options.reload) {
+                        loader = loader.reset();
+                    }
 
-                if (loader.state()!=="pending") return;
+                    // Add template loader as a task of this batch
+                    batch.addTask(loader);
 
-                // Load as part of a coalesced ajax call if enabled
-                if (self.optimizeResources) {
+                    if (loader.state()!=="pending") return;
 
-                    require.resource({
-                        type: "view",
-                        name: name,
-                        loader: loader
-                    });
+                    // Load as part of a coalesced ajax call if enabled
+                    if (self.optimizeResources) {
 
-                    return;
+                        require.resource({
+                            type: "view",
+                            name: name,
+                            loader: loader
+                        });
 
-                } else {
+                        return;
 
-                    loaders[name] = loader;
-                    return names;
-                }
-            });
+                    } else {
+
+                        loaders[name] = loader;
+                        return names;
+                    }
+                });
 
             // Load using regular ajax call
             // This will always be zero when optimizeResources is enabled.
@@ -447,41 +390,84 @@ $.extend(Component.prototype, {
             return require;
         };
 
-        require.library = function() {
-
-            // Replace component script method
-            // with foundry script method
-            require.script = __script;
-
-            // Execute library method
-            __library.apply(require, arguments);
-
-            // Reverse script method replacement
-            require.script = requireScript;
-
-            return require;
-        };
-
         require.language = function() {
 
             var args = $.makeArray(arguments),
-
                 options = {path: self.languagePath},
-
                 names = [];
 
             if ($.isPlainObject(args[0])) {
-
                 options = $.extend(args[0], options);
-
                 names = args.slice(1);
-
             } else {
-
                 names = args;
             }
 
             return __language.apply(require, [options].concat(names));
+        };
+
+        require.library = function() {
+
+            // Keep a copy of the component script method
+            var o = require.script;
+
+            // Replace component script method
+            // with foundry script method
+            require.script = _require.script;
+
+            // Execute library method
+            _require.library.apply(require, arguments);
+
+            // Reverse script method replacement
+            require.script = o;
+
+            return require;
+        };
+
+        require.script = function() {
+
+            var batch = this,
+
+                // Translate module names
+                names = $.makeArray(arguments),
+
+                args = $.map(names, function(name) {
+
+                    // Ignore script settings
+                    if ($.isPlainObject(name) ||
+
+                        // and module definitions
+                        $.isArray(name) ||
+
+                        // and urls
+                        $.isUrl(name) ||
+
+                        // and relative paths.
+                        /^(\/|\.)/.test(name)) return name;
+
+                    var moduleName = self.prefix + name,
+                        moduleUrl = $.uri(batch.options.path).toPath('./' + name + '.js').toString(); // Get extension from options
+
+                    return [[moduleName, moduleUrl, true]];
+                });
+
+            return __script.apply(require, args);
+        };
+
+        // Override path
+        require.template = function() {
+
+            var batch   = this,
+
+                request = batch.expandRequest(arguments, {path: self.templatePath});
+
+            return __template.apply(require, [request.options].concat(
+
+                $.map(request.names, function(name) {
+
+                    return [[self.prefix + name, name]];
+                })
+            ));
         };
 
         // To ensure all require callbacks are executed after the component's dependencies are ready,
