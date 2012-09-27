@@ -270,7 +270,7 @@ $.extend(Component.prototype, {
 
                         $.ajax(
                             {
-                                url: self.options.resourcePath,
+                                url: self.resourcePath,
                                 dataType: "json",
                                 data: {
                                     resource: resource.manifest
@@ -288,7 +288,7 @@ $.extend(Component.prototype, {
                                     var content = resource.content;
 
                                     resourceCollector.loaders[resource.id]
-                                        [content!==null ? "resolve" : "reject"]
+                                        [content===undefined ? "resolve" : "reject"]
                                         (content);
                                 });
                             });
