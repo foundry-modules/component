@@ -372,116 +372,77 @@ $.extend(Component.prototype, {
         require.view = function() {
 
             var batch = this,
-
                 args = $.makeArray(arguments),
-
                 options = {path: self.viewPath},
-
                 names = [];
 
             if ($.isPlainObject(args[0])) {
-
                 options = $.extend(args[0], options);
-
                 names = args.slice(1);
-
             } else {
-
                 names = args;
             }
 
-            // Temporarily disabled
-            // if (!options.reload) {
-            // }
+            var loaders = {};
 
-            // If component is not collecting views
-            if (!self.viewCollector) {
+            names = $.map(names, function(name) {
 
-                // Then start collecting
-                self.viewCollector = $.Deferred();
+                // Get template loader
+                var absoluteName = self.prefix + name,
+                    loader = $.template.loader(absoluteName);
 
-                // Create an array of names
-                self.viewCollector.names = [];
+                // See if we need to reload this template
+                if (/resolved|failed/.test(loader.state()) && options.reload) {
+                    loader = loader.reset();
+                }
 
-                self.viewCollector.timer =
+                // Add template loader as a task of this batch
+                batch.addTask(loader);
 
-                    setTimeout(function() {
+                if (loader.state()!=="pending") return;
 
-                        // Reassign myself to a private variable
-                        var collector = self.viewCollector;
+                // Load as part of a coalesced ajax call if enabled
+                if (self.optimizeResources) {
 
-                        // I will now stop collecting, and wait for
-                        // subsequent view() call to wake me up.
-                        self.viewCollector = false;
+                    require.resource({
+                        type: "view",
+                        name: name,
+                        loader: loader
+                    });
 
-                        // Collecting template loaders
-                        collector.loaders = [];
+                    return;
 
-                        $.each(collector.names, function(i, name){
+                } else {
 
-                            var templateName = self.prefix + name,
-                                templateLoader = $.template.loaders[templateName];
+                    loaders[name] = loader;
+                    return names;
+                }
+            });
 
-                            // If template loader hasn't been created,
-                            if (!templateLoader) {
+            // Load using regular ajax call
+            // This will always be zero when optimizeResources is enabled.
+            if (names.length > 0) {
 
-                                // create template loader.
-                                templateLoader = $.template.loaders[templateName] = $.Deferred();
-                            }
+                $.ajax(
+                    {
+                        url: options.path,
+                        dataType: "json",
+                        data: { names: names }
+                    })
+                    .done(function(templates) {
 
-                            // Push it to our collection
-                            collector.loaders.push(templateLoader);
+                        if (!$.isArray(templates)) return;
+
+                        $.each(templates, function(i, template) {
+
+                            var content = template.content;
+
+                            loaders[template.name]
+                                [content===undefined ? "resolve" : "reject"]
+                                (content);
                         });
-
-                        if (collector.names.length > 0) {
-
-                            $.ajax(
-                                {
-                                    url: options.path,
-
-                                    dataType: "json",
-
-                                    data: {
-                                        names: collector.names
-                                    }
-                                })
-                                .done(function(templates) {
-
-                                    if ($.isArray(templates)) {
-
-                                        $.each(templates, function(i, template) {
-
-                                            var templateName = self.prefix + template.name;
-
-                                            $.template(templateName, template.content);
-
-                                            $.template.loaders[templateName].resolveWith($, [template.content]);
-                                        });
-                                    }
-                                });
-                        }
-
-                        $.when.apply(null, collector.loaders)
-                            .done(function() {
-                                collector.resolve();
-                            })
-                            .fail(function(){
-                                collector.reject();
-                            });
-
-                    // Joomla session timestamp is per second, we add another 200ms just to be safe.
-                    }, 1200);
+                    });
             }
-
-            // Warning: There may be a race condition issue.
-
-            var task = self.viewCollector;
-
-            task.names = task.names.concat(names);
-
-            task.name = "View " + self.prefix + task.names.join(", " + self.prefix);
-
-            batch.addTask(task);
 
             return require;
         };
