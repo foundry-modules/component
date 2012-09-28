@@ -264,7 +264,7 @@ $.extend(Component.prototype, {
 
                 $.extend(resourceCollector, {
 
-                    name: $.uid("ResourceCollector");
+                    name: $.uid("ResourceCollector"),
 
                     manifest: [],
 
