@@ -392,18 +392,31 @@ $.extend(Component.prototype, {
 
         require.language = function() {
 
-            var args = $.makeArray(arguments),
-                options = {path: self.languagePath},
-                names = [];
+            var batch   = this,
 
-            if ($.isPlainObject(args[0])) {
-                options = $.extend(args[0], options);
-                names = args.slice(1);
+                request = $.expand(arguments, {path: self.languagePath});
+
+            // Load as part of a coalesced ajax call if enabled
+            if (self.optimizeResources) {
+
+                $.each(request.names, function(i, name) {
+
+                    require.resource({
+                        type: "view",
+                        name: name,
+                        loader: $.Deferred().done(function(val){
+
+                            $.language.add(name, val);
+                        })
+                    });
+                });
+
             } else {
-                names = args;
+
+                _require.language.apply(require, [require.options].concat(request.names));
             }
 
-            return __language.apply(require, [options].concat(names));
+            return require;
         };
 
         require.library = function() {
@@ -451,7 +464,7 @@ $.extend(Component.prototype, {
                     return [[moduleName, moduleUrl, true]];
                 });
 
-            return __script.apply(require, args);
+            return _require.script.apply(require, args);
         };
 
         // Override path
@@ -461,7 +474,7 @@ $.extend(Component.prototype, {
 
                 request = batch.expandRequest(arguments, {path: self.templatePath});
 
-            return __template.apply(require, [request.options].concat(
+            return _require.template.apply(require, [request.options].concat(
 
                 $.map(request.names, function(name) {
 
@@ -474,7 +487,7 @@ $.extend(Component.prototype, {
         // every callback made through component.require() is wrapped in a component.ready() function.
         require.done = function(callback) {
 
-            return __done.call(require, function(){
+            return _require.done.call(require, function(){
 
                 $.module('component/mvc').done(
 
