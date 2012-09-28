@@ -215,7 +215,7 @@ $.extend(Component.prototype, {
 
             require = $.require($.extend({path: self.scriptPath}, options)),
 
-            _require = {},
+            _require = {};
 
             // Keep a copy of the original method so the duck punchers below can use it.
             $.each(["library", "script", "language", "template", "done"], function(i, method){
