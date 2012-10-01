@@ -406,7 +406,7 @@ $.extend(Component.prototype, {
                 $.each(request.names, function(i, name) {
 
                     require.resource({
-                        type: "view",
+                        type: "language",
                         name: name,
                         loader: $.Deferred().done(function(val){
 
