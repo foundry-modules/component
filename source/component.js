@@ -254,7 +254,7 @@ $.extend(Component.prototype, {
 
                 // Remove the reference to the loader
                 // - so the loader doesn't get included in the manifest that gets sent to the server
-                delete resource.loaders
+                delete resource.loader;
 
                 // Then add it to our list of resource manifest
                 resourceCollector.manifest.push(resource);
@@ -282,10 +282,11 @@ $.extend(Component.prototype, {
 
                         $.ajax(
                             {
+                                type: 'POST',
                                 url: self.resourcePath,
                                 dataType: "json",
                                 data: {
-                                    resource: resource.manifest
+                                    resource: resourceCollector.manifest
                                 }
                             })
                             .done(function(manifest) {
@@ -312,7 +313,7 @@ $.extend(Component.prototype, {
                     }
                 });
 
-                setTimeout(resourceCollector.load, self.options.resourceCollectionInterval);
+                setTimeout(resourceCollector.load, self.resourceCollectionInterval);
             }
 
             // Note: Only resource loaders are batch tasks, not resource collectors.
