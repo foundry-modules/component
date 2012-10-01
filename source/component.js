@@ -74,6 +74,7 @@ Component.register = function(name, options, callback) {
     self.identifier    = name.toLowerCase();
     self.componentName = "com_" + self.identifier;
     self.version       = options.version;
+    self.safeVersion   = self.version.replace(/\./g,"");
 
     self.environment   = options.environment  || $.environment;
     self.debug         = (self.environment=='development');
@@ -89,6 +90,8 @@ Component.register = function(name, options, callback) {
     self.optimizeResources  = options.optimizeResources || (self.environment==="optimized") ? true : false;
     self.resourcePath       = options.resourcePath || self.baseUrl + '&tmpl=component&no_html=1&controller=foundry&task=getResource';
     self.resourceCollectionInterval = 1200; // Joomla session timestamp is per second, we add another 200ms just to be safe.
+
+    self.scriptVersioning = options.scriptVersioning || false;
 
     self.isReady       = false;
     self.dependencies  = $.Deferred();
@@ -358,7 +361,7 @@ $.extend(Component.prototype, {
                     } else {
 
                         loaders[name] = loader;
-                        return names;
+                        return name;
                     }
                 });
 
@@ -441,16 +444,12 @@ $.extend(Component.prototype, {
 
             var batch = this,
 
-                // Translate module names
-                names = $.makeArray(arguments),
+                request = batch.expand(arguments)
 
-                args = $.map(names, function(name) {
+                names = $.map(request.names, function(name) {
 
-                    // Ignore script settings
-                    if ($.isPlainObject(name) ||
-
-                        // and module definitions
-                        $.isArray(name) ||
+                    // Ignore module definitions
+                    if ($.isArray(name) ||
 
                         // and urls
                         $.isUrl(name) ||
@@ -459,12 +458,20 @@ $.extend(Component.prototype, {
                         /^(\/|\.)/.test(name)) return name;
 
                     var moduleName = self.prefix + name,
-                        moduleUrl = $.uri(batch.options.path).toPath('./' + name + '.js').toString(); // Get extension from options
+
+                        moduleUrl =
+
+                            $.uri(batch.options.path)
+                                .toPath(
+                                    './' + name + '.' + (request.options.extension || 'js') +
+                                    ((self.scriptVersioning) ? "?" + "version=" + self.safeVersion : "")
+                                )
+                                .toString();
 
                     return [[moduleName, moduleUrl, true]];
                 });
 
-            return _require.script.apply(require, args);
+            return _require.script.apply(require, names);
         };
 
         // Override path
@@ -472,7 +479,7 @@ $.extend(Component.prototype, {
 
             var batch   = this,
 
-                request = batch.expandRequest(arguments, {path: self.templatePath});
+                request = batch.expand(arguments, {path: self.templatePath});
 
             return _require.template.apply(require, [request.options].concat(
 
