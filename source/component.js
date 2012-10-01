@@ -297,7 +297,7 @@ $.extend(Component.prototype, {
                                     var content = resource.content;
 
                                     resourceCollector.loaders[resource.id]
-                                        [content===undefined ? "resolve" : "reject"]
+                                        [content!==undefined ? "resolve" : "reject"]
                                         (content);
                                 });
                             });
@@ -322,7 +322,7 @@ $.extend(Component.prototype, {
 
             var batch   = this,
 
-                request = $.expand(arguments, {path: self.viewPath}),
+                request = batch.expand(arguments, {path: self.viewPath}),
 
                 loaders = {},
 
@@ -381,7 +381,7 @@ $.extend(Component.prototype, {
                             var content = template.content;
 
                             loaders[template.name]
-                                [content===undefined ? "resolve" : "reject"]
+                                [content!==undefined ? "resolve" : "reject"]
                                 (content);
                         });
                     });
@@ -394,7 +394,7 @@ $.extend(Component.prototype, {
 
             var batch   = this,
 
-                request = $.expand(arguments, {path: self.languagePath});
+                request = batch.expand(arguments, {path: self.languagePath});
 
             // Load as part of a coalesced ajax call if enabled
             if (self.optimizeResources) {
