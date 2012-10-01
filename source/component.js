@@ -413,7 +413,7 @@ $.extend(Component.prototype, {
 
             } else {
 
-                _require.language.apply(require, [require.options].concat(request.names));
+                _require.language.apply(require, [request.options].concat(request.names));
             }
 
             return require;
