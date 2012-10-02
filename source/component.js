@@ -238,32 +238,11 @@ $.extend(Component.prototype, {
             // Get resource collector
             var resourceCollector = self.resourceCollector;
 
-            // If we have started collecting resources
-            if (resourceCollector) {
-
-                // Create a resource id
-                var id = resource.id = $.uid("Resource");
-
-                // Add to the loader map
-                // - to be used to resolve the loader with the returned content
-                resourceCollector.loaders[id] = resource.loader;
-
-                // Add to the loader list
-                // - to be used with $.when()
-                resourceCollector.loaderList.push(resource.loader);
-
-                // Remove the reference to the loader
-                // - so the loader doesn't get included in the manifest that gets sent to the server
-                delete resource.loader;
-
-                // Then add it to our list of resource manifest
-                resourceCollector.manifest.push(resource);
-
             // If we haven't started collecting resources
-            } else {
+            if (!resourceCollector) {
 
                 // Then start collecting resources
-                var resourceCollector = self.resourceCollector = $.Deferred();
+                resourceCollector = self.resourceCollector = $.Deferred();
 
                 $.extend(resourceCollector, {
 
@@ -315,6 +294,24 @@ $.extend(Component.prototype, {
 
                 setTimeout(resourceCollector.load, self.resourceCollectionInterval);
             }
+
+            // Create a resource id
+            var id = resource.id = $.uid("Resource");
+
+            // Add to the loader map
+            // - to be used to resolve the loader with the returned content
+            resourceCollector.loaders[id] = resource.loader;
+
+            // Add to the loader list
+            // - to be used with $.when()
+            resourceCollector.loaderList.push(resource.loader);
+
+            // Remove the reference to the loader
+            // - so the loader doesn't get included in the manifest that gets sent to the server
+            delete resource.loader;
+
+            // Then add it to our list of resource manifest
+            resourceCollector.manifest.push(resource);
 
             // Note: Only resource loaders are batch tasks, not resource collectors.
             // var task = resourceCollector;
