@@ -19,7 +19,7 @@ $.require()
             var self = this;
 
             var options = {
-                    url: $.indexUrl,
+                    url: self.baseUrl,
                     data: $.extend(
                         params,
                         {
