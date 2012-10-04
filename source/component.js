@@ -93,6 +93,8 @@ Component.register = function(name, options, callback) {
 
     self.scriptVersioning = options.scriptVersioning || false;
 
+    self.initRecovery     = options.initRecovery || false;
+
     self.isReady       = false;
     self.dependencies  = $.Deferred();
 
@@ -139,6 +141,34 @@ Component.register = function(name, options, callback) {
             });
         }
     });
+
+    // If the component supports init recovery,
+    // then see if it were broken.
+    if (self.initRecovery) {
+
+        // When the document is ready
+        $(document).ready(function(){
+
+            // If the initializer is resolved, skip.
+            if (self.module("init").state!=="pending") return;
+
+            // If the initializer is still pending, look for it.
+            var initializer = $("script[data-id='" + self.identifier + "-init']")[0];
+
+            // If initializer could not be found, skip.
+            if (initializer===undefined) return;
+
+            // Try to execute initializer again.
+            try {
+
+                eval(initializer.innerHTML);
+            } catch(e) {
+
+                // If there was an error executing the initializer, report it.
+                throw "Unable to recover component initializer for " + self.className + ". " + e;
+            }
+        });
+    }
 }
 
 Component.extend = function(property, value) {
