@@ -259,6 +259,13 @@ $.extend(Component.prototype, {
                         // End this batch of resource collecting
                         delete self.resourceCollector;
 
+                        // If there are not resources to pull,
+                        // just resolve resource collector.
+                        if (resourceCollector.manifest.length < 0) {
+                            resourceCollector.resolve();
+                            return;
+                        }
+
                         $.ajax(
                             {
                                 type: 'POST',
