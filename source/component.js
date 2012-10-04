@@ -174,13 +174,13 @@ Component.register = function(name, options, callback) {
         $(document).ready(function(){
 
             // If the initializer is resolved, skip.
-            if (self.module("init").state!=="pending") return;
+            if (self.module("init").state()!=="pending") return;
 
             // If the initializer is still pending, look for it.
             var initializer = $("script[data-id='" + self.identifier + "-init']")[0];
 
             // If initializer could not be found, skip.
-            if (initializer===undefined) return;
+            if (!initializer) return;
 
             // Try to execute initializer again.
             try {
