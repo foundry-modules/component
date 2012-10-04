@@ -98,6 +98,30 @@ Component.register = function(name, options, callback) {
     self.isReady       = false;
     self.dependencies  = $.Deferred();
 
+    // Added console
+    self.console = function(method) {
+
+        if (!self.debug) return;
+
+        var console = window.console;
+
+        if (!console) return;
+
+        var method = console[method];
+
+        if (!method) return;
+
+        var args = $.makeArray(arguments).slice(1);
+
+        // Normal browsers
+        if (method.apply) {
+            method.apply(console, args);
+        // IE
+        } else {
+            method(args.join(" "));
+        }
+    }
+
     var resolveComponent = function() {
 
         self.dependencies.resolve();
