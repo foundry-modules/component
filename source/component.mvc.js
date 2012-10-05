@@ -44,17 +44,18 @@ $.require()
                 options.data.args = $.toJSON(options.data.args);
             }
 
-            if (callback.type=='jsonp')
-            {
-                delete callback.type;
-
-                callback.dataType = 'jsonp';
-
-                // This ensure jQuery doesn't use XHR should it detect the ajax url is a local domain.
-                callback.crossDomain = true;
-            }
-
             if ($.isPlainObject(callback)) {
+
+                if (callback.type=='jsonp')
+                {
+                    delete callback.type;
+
+                    callback.dataType = 'jsonp';
+
+                    // This ensure jQuery doesn't use XHR should it detect the ajax url is a local domain.
+                    callback.crossDomain = true;
+                }
+
                 $.extend(options, callback);
             }
 
