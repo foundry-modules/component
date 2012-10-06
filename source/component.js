@@ -588,9 +588,15 @@ $.extend(Component.prototype, {
         return (factory) ?
 
             // Set module
-            $.module.apply(null, [name, function(){
+            $.module.apply(null, [fullName, function(){
 
                 var module = this;
+
+                if (name==="init") {
+
+                    factory.call(module, $);
+                    return;
+                }
 
                 // Wait until MVC is loaded
                 $.module('component/mvc').done(function(){
