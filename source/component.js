@@ -582,13 +582,12 @@ $.extend(Component.prototype, {
             return;
         }
 
-        name = self.prefix + name;
-
+        var fullname = self.prefix + name;
 
         return (factory) ?
 
             // Set module
-            $.module.apply(null, [fullName, function(){
+            $.module.apply(null, [fullname, function(){
 
                 var module = this;
 
@@ -609,6 +608,6 @@ $.extend(Component.prototype, {
             :
 
             // Get module
-            $.module(name);
+            $.module(fullname);
     }
 });
