@@ -320,7 +320,7 @@ $.extend(Component.prototype, {
                             return;
                         }
 
-                        $.ajax(
+                        $.Ajax(
                             {
                                 type: 'POST',
                                 url: self.resourcePath,
@@ -428,7 +428,7 @@ $.extend(Component.prototype, {
             // This will always be zero when optimizeResources is enabled.
             if (names.length > 0) {
 
-                $.ajax(
+                $.Ajax(
                     {
                         url: options.path,
                         dataType: "json",
