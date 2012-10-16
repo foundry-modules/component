@@ -463,13 +463,21 @@ $.extend(Component.prototype, {
 
                 $.each(request.names, function(i, name) {
 
+                    var loader = $.Deferred();
+
+                    loader.name = name;
+
+                    loader.done(function(val){
+
+                        $.language.add(name, val);
+                    });
+
+                    batch.addTask(loader);
+
                     require.resource({
                         type: "language",
                         name: name,
-                        loader: $.Deferred().done(function(val){
-
-                            $.language.add(name, val);
-                        })
+                        loader: loader
                     });
                 });
 
