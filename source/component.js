@@ -78,7 +78,7 @@ Component.register = function(name, options, callback) {
 
     self.environment   = options.environment  || $.environment;
     self.debug         = (self.environment=='development');
-    self.language      = "en";
+    self.language      = options.language || $.locale.lang || "en";
 
     self.baseUrl       = options.baseUrl      || $.indexUrl + "?option=" + self.componentName;
     self.scriptPath    = options.scriptPath   || $.rootPath + "media/" + self.componentName + ((self.debug) ? "/scripts_/" : "/scripts/");
