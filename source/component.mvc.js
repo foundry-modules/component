@@ -46,14 +46,32 @@ $.require()
 
             if ($.isPlainObject(callback)) {
 
-                if (callback.type=='jsonp')
-                {
+                if (callback.type) {
+
+                    switch (callback.type) {
+
+                        case 'jsonp':
+
+                            callback.dataType = 'jsonp';
+
+                            // This ensure jQuery doesn't use XHR should it detect the ajax url is a local domain.
+                            callback.crossDomain = true;
+
+                            options.data.transport = 'jsonp';
+                            break;
+
+                        case 'iframe':
+
+                            // For use with iframe-transport
+                            callback.iframe = true;
+
+                            callback.processData = false;
+
+                            options.data.transport = 'iframe';
+                            break;
+                    }
+
                     delete callback.type;
-
-                    callback.dataType = 'jsonp';
-
-                    // This ensure jQuery doesn't use XHR should it detect the ajax url is a local domain.
-                    callback.crossDomain = true;
                 }
 
                 $.extend(options, callback);
