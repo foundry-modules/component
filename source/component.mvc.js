@@ -67,6 +67,10 @@ $.require()
 
                             callback.processData = false;
 
+                            callback.files = options.data.files;
+
+                            delete options.data.files;
+
                             options.data.transport = 'iframe';
                             break;
                     }
