@@ -60,8 +60,6 @@ Component.register = function(name, options, callback) {
             return ($.isFunction(command)) ? command($) : component;
         };
 
-    // @TODO: Component should be a deferred object, replace $.module("component/mvc").done().
-
     // Extend component with properties in component prototype
     $.each(Component.prototype, function(property, value) {
 
@@ -220,22 +218,18 @@ $.extend(Component.prototype, {
 
         var self = this;
 
-        // Only when MVC is loaded
-        $.module('component/mvc').done(function() {
+        // When intial dependencies are loaded
+        self.dependencies
+            .done(function() {
 
-            // and intial dependencies are loaded
-            self.dependencies
-                .done(function() {
+                // and document is ready
+                $(document).ready(function() {
 
-                    // and document is ready
-                    $(document).ready(function() {
+                    // then only execute ready callback
+                    self.run(callback);
 
-                        // then only execute ready callback
-                        self.run(callback);
-
-                    });
                 });
-        });
+            });
     },
 
     template: function(name) {
@@ -563,18 +557,13 @@ $.extend(Component.prototype, {
 
             return _require.done.call(require, function(){
 
-                $.module('component/mvc').done(
+                if (options.loadingComponentDependencies) {
 
-                    (options.loadingComponentDependencies) ?
+                    callback.call(self, $);
+                } else {
 
-                        function() {
-                            callback.call(self, $);
-                        } :
-
-                        function() {
-                            self.ready(callback);
-                        }
-                );
+                    self.ready(callback);
+                }
             });
         };
 
@@ -599,18 +588,7 @@ $.extend(Component.prototype, {
 
                 var module = this;
 
-                if (name==="init") {
-
-                    factory.call(module, $);
-                    return;
-                }
-
-                // Wait until MVC is loaded
-                $.module('component/mvc').done(function(){
-
-                    factory.call(module, $);
-
-                });
+                factory.call(module, $);
             }])
 
             :
