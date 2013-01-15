@@ -76,13 +76,13 @@ $.Component.extend("Controller", function() {
 
     var self = this,
         args = $.makeArray(arguments),
-        name = self.className + '.Controller.' + args[0],
+        name = args[0],
         staticProps,
         protoFactory;
 
     // Getter
     if (args.length==1) {
-        return $.String.getObject(args[0]);
+        return $.String.getObject(name);
     };
 
     // Setter
@@ -97,6 +97,7 @@ $.Component.extend("Controller", function() {
     // Map component as a static property
     // of the controller class
     $.extend(staticProps, {
+        namespace: self.className + '.Controller',
         component: self
     });
 
