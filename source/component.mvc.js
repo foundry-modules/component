@@ -97,7 +97,7 @@ $.Component.extend("Controller", function() {
     // Map component as a static property
     // of the controller class
     $.extend(staticProps, {
-        namespace: self.className + '.Controller',
+        root: self.className + '.Controller',
         component: self
     });
 
