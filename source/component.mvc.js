@@ -69,7 +69,15 @@ $.Component.extend("ajax", function(namespace, params, callback) {
         options.success = callback;
     }
 
-    return $.server(options);
+    var ajax = $.server(options);
+
+    ajax.progress(function(message, type, code) {
+        if (type=="debug") {
+            self.console.log(message, type, code);
+        }
+    });
+
+    return ajax;
 });
 
 $.Component.extend("Controller", function() {
