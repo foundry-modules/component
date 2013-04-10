@@ -76,6 +76,8 @@ Component.register = function(name, options, callback) {
 
     self.environment   = options.environment  || $.environment;
     self.debug         = (self.environment=='development');
+    self.console       = Component.console(self);
+
     self.language      = options.language || $.locale.lang || "en";
 
     self.baseUrl       = options.baseUrl      || $.indexUrl + "?option=" + self.componentName;
@@ -95,30 +97,6 @@ Component.register = function(name, options, callback) {
 
     self.isReady       = false;
     self.dependencies  = $.Deferred();
-
-    // Added console
-    self.console = function(method) {
-
-        if (!self.debug) return;
-
-        var console = window.console;
-
-        if (!console) return;
-
-        var method = console[method];
-
-        if (!method) return;
-
-        var args = $.makeArray(arguments).slice(1);
-
-        // Normal browsers
-        if (method.apply) {
-            method.apply(console, args);
-        // IE
-        } else {
-            method(args.join(" "));
-        }
-    }
 
     var resolveComponent = function() {
 
@@ -202,6 +180,83 @@ Component.extend = function(property, value) {
     $.each(Component.registry, function(name, component) {
         Component.proxy(component, property, value);
     });
+}
+
+$.template("component/console",'<div id="[%== component.identifier %]-console" class="foundry-console" style="display: none;"><div class="console-header"><div class="console-title">[%= component.className %] [%= component.version %]</div><div class="console-remove-button">x</div></div><div class="console-log-item-group"></div><style type="text/css">.foundry-console{position:fixed;width:50%;height:50%;bottom:0;left:0;background:white;box-shadow: 0 0 5px 0;margin-left: 25px;}.console-log-item-group{width: 100%;height: 100%;overflow-y:scroll;}.console-header{position: absolute;background:red;color:white;font-weight:bold;top:-24px;left: 0;line-height:24px;width:100%}.console-remove-button{text-align:center;cursor: pointer;display:block;width: 24px;float:right}.console-remove-button:hover{color: yellow}.console-title{padding: 0 5px;float:left}.console-log-item{padding: 5px}.console-log-item + .console-log-item{border-top: 1px solid #ccc}</style></div>');
+
+Component.console = function(component) {
+
+    return (function(self){
+
+        var instance = function(method) {
+
+                if (arguments.length < 1) {
+                    return instance.toggle();
+                }
+
+                return instance[method] && instance[method].apply(instance, arguments);
+            },
+
+            element;
+
+            instance.selector = "#" + self.identifier + "-console";
+
+            instance.init = (function() {
+
+                element = $(instance.selector);
+
+                if (element.length < 1) {
+                    element = $($.View("component/console", {component: self})).appendTo("body");
+
+                    element.find(".console-remove-button").click(function(){
+                        element.hide();
+                    });
+                }
+
+                instance.element = element;
+
+                return arguments.callee;
+            })();
+
+            instance.methods = {
+
+                log: function(message, type, code) {
+
+                    type = type || "info";
+
+                    var itemGroup = element.find(".console-log-item-group"),
+                        item =
+                            $(document.createElement("div"))
+                                .addClass("console-log-item type-" + type)
+                                .attr("data-code", code)
+                                .html(message);
+
+                    itemGroup.append(item);
+                    itemGroup[0].scrollTop = itemGroup[0].scrollHeight;
+
+                    // Automatically show window on each log
+                    if (self.debug) { element.show(); }
+                },
+
+                toggle: function() {
+                    element.toggle();
+                },
+
+                reset: function() {
+                    element.find(".console-log-item-group").empty();
+                }
+            };
+
+        $.each(instance.methods, function(method, fn) {
+            instance[method] = function() {
+                instance.init(); // Always call init in case of destruction of element
+                return fn.apply(instance, arguments);
+            }
+        });
+
+        return instance;
+
+    })(component);
 }
 
 $.extend(Component.prototype, {
@@ -596,4 +651,5 @@ $.extend(Component.prototype, {
             // Get module
             $.module(fullname);
     }
+
 });
