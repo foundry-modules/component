@@ -1,9 +1,9 @@
-all: join resolve-namespace wrap-core
+all: join-script-files resolve-namespace wrap-script minify-script
 
 include ../../build/modules.mk
 
 MODULE = component
 
-SOURCE_FILES = ${SOURCE_DIR}/${MODULE}.js \
-${SOURCE_DIR}/${MODULE}.mvc.js \
-${SOURCE_DIR}/${MODULE}.exports.js
+SOURCE_SCRIPT_FILES = ${SOURCE_SCRIPT_FOLDER}/${MODULE}.js \
+${SOURCE_SCRIPT_FOLDER}/${MODULE}.mvc.js \
+${SOURCE_SCRIPT_FOLDER}/${MODULE}.exports.js
