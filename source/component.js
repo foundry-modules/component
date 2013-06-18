@@ -97,33 +97,6 @@ Component.register = function(name, options, callback) {
 
     self.initRecovery     = options.initRecovery || false;
 
-    self.isReady       = false;
-    self.dependencies  = $.Deferred();
-
-    var resolveComponent = function() {
-
-        self.dependencies.resolve();
-
-        self.ready(function() {
-            self.isReady = true;
-            self.run(callback);
-        });
-    }
-
-    // Load component dependencies,
-    if ($.isFunction(options.dependencies)) {
-
-        var require = self.require({loadingComponentDependencies: true});
-
-        options.dependencies.call(self, require);
-
-        require.done(resolveComponent);
-
-    // or resolve component straightaway.
-    } else {
-        resolveComponent();
-    }
-
     // Go through each execution queue and run it
     $.each(queue, function(i, func) {
 
@@ -270,23 +243,18 @@ $.extend(Component.prototype, {
 
     ready: function(callback) {
 
-        if (!$.isFunction(callback))
-            return;
+        if (!$.isFunction(callback)) return;
 
         var self = this;
 
-        // When intial dependencies are loaded
-        self.dependencies
-            .done(function() {
+        // When document is ready
+        $(document).ready(function() {
 
-                // and document is ready
-                $(document).ready(function() {
-
-                    // then only execute ready callback
-                    self.run(callback);
-
-                });
-            });
+            // then only execute ready callback
+            // wrapped in a setTimeout to prevent
+            // chain from breaking.
+            setTimeout(function(){self.run(callback)}, 0);
+        });
     },
 
     template: function(name) {
@@ -578,7 +546,9 @@ $.extend(Component.prototype, {
                     return [[moduleName, moduleUrl, true]];
                 });
 
-            return _require.script.apply(require, [request.options].concat(names));
+            _require.script.apply(require, [request.options].concat(names));
+
+            return require;
         };
 
         // Override path
@@ -588,28 +558,24 @@ $.extend(Component.prototype, {
 
                 request = batch.expand(arguments, {path: self.templatePath});
 
-            return _require.template.apply(require, [request.options].concat(
+            _require.template.apply(require, [request.options].concat(
 
                 $.map(request.names, function(name) {
 
                     return [[self.prefix + name, name]];
                 })
             ));
+
+            return require;
         };
 
-        // To ensure all require callbacks are executed after the component's dependencies are ready,
-        // every callback made through component.require() is wrapped in a component.ready() function.
+
+        // Only execute require done callback when component is ready
         require.done = function(callback) {
 
             return _require.done.call(require, function(){
 
-                if (options.loadingComponentDependencies) {
-
-                    callback.call(self, $);
-                } else {
-
-                    self.ready(callback);
-                }
+                self.ready(callback);
             });
         };
 
