@@ -321,7 +321,7 @@ $.extend(Component.prototype, {
 
             options = options || {},
 
-            require = $.require($.extend({path: self.scriptPath}, options)),
+            require = $.require(options),
 
             _require = {};
 
@@ -542,18 +542,7 @@ $.extend(Component.prototype, {
 
         require.library = function() {
 
-            // Keep a copy of the component script method
-            var o = require.script;
-
-            // Replace component script method
-            // with foundry script method
-            require.script = _require.script;
-
-            // Execute library method
-            _require.library.apply(require, arguments);
-
-            // Reverse script method replacement
-            require.script = o;
+            _require.script.apply(this, arguments);
 
             return require;
         };
@@ -562,7 +551,7 @@ $.extend(Component.prototype, {
 
             var batch = this,
 
-                request = batch.expand(arguments)
+                request = batch.expand(arguments, {path: self.scriptPath})
 
                 names = $.map(request.names, function(name) {
 
@@ -579,7 +568,7 @@ $.extend(Component.prototype, {
 
                         moduleUrl =
 
-                            $.uri(batch.options.path)
+                            $.uri(request.options.path)
                                 .toPath(
                                     './' + name + '.' + (request.options.extension || 'js') +
                                     ((self.scriptVersioning) ? "?" + "version=" + self.safeVersion : "")
@@ -589,7 +578,7 @@ $.extend(Component.prototype, {
                     return [[moduleName, moduleUrl, true]];
                 });
 
-            return _require.script.apply(require, names);
+            return _require.script.apply(require, [request.options].concat(names));
         };
 
         // Override path
