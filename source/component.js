@@ -409,21 +409,14 @@ $.extend(Component.prototype, {
 
                 options = request.options,
 
-                names = $.map(request.names, function(name) {
+                names   = $.map(request.names, function(name) {
 
                     // Get template loader
                     var absoluteName = self.prefix + name,
-                        loader = $.template.loader(absoluteName);
-
-                    // See if we need to reload this template
-                    if (/resolved|failed/.test(loader.state()) && options.reload) {
-                        loader = loader.reset();
-                    }
+                        loader = $.require.template.loader(absoluteName);
 
                     // Add template loader as a task of this batch
                     batch.addTask(loader);
-
-                    if (loader.state()!=="pending") return;
 
                     // Load as part of a coalesced ajax call if enabled
                     if (self.optimizeResources) {
@@ -482,14 +475,7 @@ $.extend(Component.prototype, {
 
                 $.each(request.names, function(i, name) {
 
-                    var loader = $.Deferred();
-
-                    loader.name = name;
-
-                    loader.done(function(val){
-
-                        $.language.add(name, val);
-                    });
+                    var loader = $.require.language.loader(name);
 
                     batch.addTask(loader);
 
