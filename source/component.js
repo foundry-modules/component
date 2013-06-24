@@ -97,6 +97,11 @@ Component.register = function(name, options, callback) {
 
     self.initRecovery     = options.initRecovery || false;
 
+    // Dispatch itself to precompiled scripts first
+    dispatch(self.className)
+        .containing($, self)
+        .toAll();    
+
     // Go through each execution queue and run it
     $.each(queue, function(i, func) {
 
