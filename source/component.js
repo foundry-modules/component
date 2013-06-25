@@ -98,9 +98,7 @@ Component.register = function(name, options, callback) {
     self.initRecovery     = options.initRecovery || false;
 
     // Dispatch itself to precompiled scripts first
-    dispatch(self.className)
-        .containing($, self)
-        .toAll();    
+    dispatch.to(self.className).at(function(fn){ fn($, self); });
 
     // Go through each execution queue and run it
     $.each(queue, function(i, func) {
@@ -418,7 +416,12 @@ $.extend(Component.prototype, {
 
                     // Get template loader
                     var absoluteName = self.prefix + name,
-                        loader = $.require.template.loader(absoluteName);
+                        loader = $.require.template.loaders[absoluteName];
+
+                    // If this is being loaded, skip.
+                    if (loader) return;
+
+                    loader = $.require.template.loader(absoluteName);
 
                     // Add template loader as a task of this batch
                     batch.addTask(loader);
@@ -480,7 +483,11 @@ $.extend(Component.prototype, {
 
                 $.each(request.names, function(i, name) {
 
-                    var loader = $.require.language.loader(name);
+                    var loader = $.require.language.loaders[name];
+
+                    if (loader) return;
+
+                    loader = $.require.language.loader(name);
 
                     batch.addTask(loader);
 
