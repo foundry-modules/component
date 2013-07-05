@@ -342,31 +342,54 @@ $.extend(Component.prototype, {
                             return;
                         }
 
-                        $.Ajax(
-                            {
-                                type: 'POST',
-                                url: self.resourcePath,
-                                dataType: "json",
-                                data: {
-                                    resource: resourceCollector.manifest
-                                }
-                            })
-                            .done(function(manifest) {
+                        var retry = 0;
 
-                                if (!$.isArray(manifest)) {
-                                    resourceCollector.reject("Server did not return a valid resource manifest.");
-                                    return;
-                                }
+                        var loadResources = function(){
 
-                                $.each(manifest, function(i, resource) {
+                            retry++;
 
-                                    var content = resource.content;
+                            $.Ajax(
+                                {
+                                    type: 'POST',
+                                    url: self.resourcePath,
+                                    dataType: "json",
+                                    data: {
+                                        resource: resourceCollector.manifest
+                                    }
+                                })
+                                .done(function(manifest) {
 
-                                    resourceCollector.loaders[resource.id]
-                                        [content!==undefined ? "resolve" : "reject"]
-                                        (content);
+                                    if (!$.isArray(manifest)) {
+                                        resourceCollector.reject("Server did not return a valid resource manifest.");
+                                        return;
+                                    }
+
+                                    $.each(manifest, function(i, resource) {
+
+                                        var content = resource.content;
+
+                                        resourceCollector.loaders[resource.id]
+                                            [content!==undefined ? "resolve" : "reject"]
+                                            (content);
+                                    });
+
+                                    if (retry > 1 && self.debug) {
+                                        console.info("Attempt to try and get resources again was successful!");
+                                    }                                    
+                                })
+                                .fail(function(){
+                                    if (retry > 2) {
+                                        if (self.debug) { console.error("Unable to get resource again. Giving up!"); };
+                                        return;
+                                    }
+                                    if (self.debug) {
+                                        console.warn("Unable to get resource. Trying again...");
+                                    }
+                                    loadResources();
                                 });
-                            });
+                        }
+
+                        loadResources();
 
                         // Resolve resource collector when all is done
                         $.when.apply(null, resourceCollector.loaderList)
