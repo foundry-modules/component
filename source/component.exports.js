@@ -2,4 +2,4 @@
 // Now that Component is done loading, we open the flood gate,
 // distribute Foundry to all.
 
-dispatch("$FOUNDRY_NAMESPACE").toAll();
+Dispatch("$FOUNDRY_NAMESPACE").toAll();

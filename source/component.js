@@ -98,7 +98,7 @@ Component.register = function(name, options, callback) {
     self.initRecovery     = options.initRecovery || false;
 
     // Dispatch itself to precompiled scripts first
-    dispatch.to(self.className).at(function(fn){ fn($, self); });
+    Dispatch.to(self.className).at(function(fn){ fn($, self); });
 
     // Go through each execution queue and run it
     $.each(queue, function(i, func) {
