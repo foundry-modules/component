@@ -96,7 +96,7 @@ Component.register = function(name, options, callback) {
         self.ajax[token] = 1;
     }    
 
-    self.optimizeResources  = options.optimizeResources || (self.environment==="optimized") ? true : false;
+    self.optimizeResources  = true;
     self.resourcePath       = options.resourcePath || self.baseUrl + '&tmpl=component&no_html=1&controller=foundry&task=getResource';
     self.resourceCollectionInterval = 1200; // Joomla session timestamp is per second, we add another 200ms just to be safe.
 
