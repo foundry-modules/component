@@ -92,8 +92,8 @@ Component.register = function(name, options, callback) {
     self.prefix        = self.identifier + "/";
 
     if (token) {
-        self.ajax = {};
-        self.ajax[token] = 1;
+        self.options.ajax = {};
+        self.options.ajax.data[token] = 1;
     }    
 
     self.optimizeResources  = true;
