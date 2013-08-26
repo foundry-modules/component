@@ -92,7 +92,7 @@ Component.register = function(name, options, callback) {
     self.prefix        = self.identifier + "/";
 
     if (token) {
-        self.options.ajax = {};
+        self.options.ajax = {data: {}};
         self.options.ajax.data[token] = 1;
     }    
 
