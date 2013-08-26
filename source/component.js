@@ -46,6 +46,8 @@ Component.register = function(name, options, callback) {
     // extract the execution queue.
     var queue = (window[name]) ? window[name].queue || [] : [];
 
+    var token = window[name].token;
+
     var self =
 
         // Put it in component registry
@@ -88,6 +90,11 @@ Component.register = function(name, options, callback) {
     self.languagePath  = options.languagePath || self.baseUrl + '&tmpl=component&no_html=1&controller=lang&task=getLanguage';
     self.viewPath      = options.viewPath     || self.baseUrl + '&tmpl=component&no_html=1&controller=themes&task=getAjaxTemplate';
     self.prefix        = self.identifier + "/";
+
+    if (token) {
+        self.ajax = {};
+        self.ajax[token] = 1;
+    }    
 
     self.optimizeResources  = options.optimizeResources || (self.environment==="optimized") ? true : false;
     self.resourcePath       = options.resourcePath || self.baseUrl + '&tmpl=component&no_html=1&controller=foundry&task=getResource';
