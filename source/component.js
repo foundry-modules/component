@@ -102,28 +102,77 @@ Component.register = function(name, options, callback) {
 
     self.scriptVersioning = options.scriptVersioning || false;
 
+    var executeAbstractQueue = function() {
+
+        // Go through each execution queue and run it
+        $.each(queue, function(i, func) {
+
+            if ($.isPlainObject(func)) {
+
+                self[func.method].apply(self, func.args);
+            }
+
+            if ($.isArray(func)) {
+
+                var chain = func,
+                    context = self;
+
+                $.each(chain, function(i, func) {
+
+                    context = context[func.method].apply(context, func.args);
+                });
+            }
+        });
+    }
+
+    if (self.environment==="development") {
+        executeAbstractQueue();
+        return;
+    }
+
+    // Create require parcels
+    var parcels = {},
+        receiveParcelTask = [];
+
+    $.each(["Definitions", "Scripts", "Extras"], function(i, parcelName){
+        var task = parcels[self.className + ' ' + parcelName] = $.Deferred();
+        receiveParcelTask.push(task);
+    });
+
     // Dispatch itself to precompiled scripts first
-    Dispatch.to(self.className).at(function(fn){ fn($, self); });
+    var hasDefinitions = false;
 
-    // Go through each execution queue and run it
-    $.each(queue, function(i, func) {
+    Dispatch.to(self.className).at(function(fn, manifest){
 
-        if ($.isPlainObject(func)) {
-
-            self[func.method].apply(self, func.args);
+        if (/Definitions/.test(manifest.name)) {
+            hasDefinitions = true;
         }
 
-        if ($.isArray(func)) {
+        // If definitions has been received
+        if (hasDefinitions) {
 
-            var chain = func,
-                context = self;
+            // Execute immediately
+            fn($, self);
 
-            $.each(chain, function(i, func) {
+        } else {
 
-                context = context[func.method].apply(context, func.args);
+            // Prepend to the beginning of the abstract execution queue
+            queue.unshift({
+                method: "run",
+                context: window,
+                args: [$, self]
             });
         }
+
+        // Resolve parcel
+        parcels[manifest.name].resolve();
     });
+
+    $.when.apply(null, receiveParcelTask)
+     .done(function(){
+
+        executeAbstractQueue();
+     });
 }
 
 Component.extend = function(property, value) {
