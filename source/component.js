@@ -140,29 +140,20 @@ Component.register = function(name, options, callback) {
     });
 
     // Dispatch itself to precompiled scripts first
-    var hasDefinitions = false;
-
     Dispatch.to(self.className).at(function(fn, manifest){
 
         if (/Definitions/.test(manifest.name)) {
-            hasDefinitions = true;
-        }
-
-        // If definitions has been received
-        if (hasDefinitions) {
-
-            // Execute immediately
             fn($, self);
-
-        } else {
-
-            // Prepend to the beginning of the abstract execution queue
-            queue.unshift({
-                method: "run",
-                context: window,
-                args: [$, self]
-            });
         }
+
+        // Prepend to the beginning of the abstract execution queue
+        queue.unshift({
+            method: "run",
+            context: window,
+            args: [function(){
+                fn($, self);
+            }]
+        });
 
         // Resolve parcel
         parcels[manifest.name].resolve();
