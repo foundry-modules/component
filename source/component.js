@@ -254,28 +254,33 @@ Component.console = function(component) {
     })(component);
 }
 
-$.extend(Component.prototype, {
+var doc = $(document),
+    proto = Component.prototype;
+
+$.extend(proto, {
 
     run: function(command) {
 
         return ($.isFunction(command)) ? command($) : component;
     },
 
-    ready: function(callback) {
+    ready: (function(){
 
-        if (!$.isFunction(callback)) return;
-
-        var self = this;
-
-        // When document is ready
-        $(document).ready(function() {
-
-            // then only execute ready callback
-            // wrapped in a setTimeout to prevent
-            // chain from breaking.
-            setTimeout(function(){self.run(callback)}, 0);
+        // Replace itself once document is ready
+        doc.ready(function(){
+            proto.ready = proto.run;
         });
-    },
+
+        return function(callback) {
+
+            if (!$.isFunction(callback)) return;
+
+            // When document is ready
+            doc.ready(function() {
+                callback($);
+            });
+        }
+    })(),
 
     template: function(name) {
 
