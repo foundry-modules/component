@@ -84,7 +84,7 @@ Component.register = function(name, options, callback) {
     self.language      = options.language || $.locale.lang || "en";
 
     self.baseUrl       = options.baseUrl      || $.indexUrl + "?option=" + self.componentName;
-    self.ajaxUrl       = options.ajaxUrl      || $.rootPath + "/?option=" + self.componentName;
+    self.ajaxUrl       = options.ajaxUrl      || $.basePath + "/?option=" + self.componentName;
     self.scriptPath    = options.scriptPath   || $.rootPath + "/media/" + self.componentName + "/scripts/";
     self.stylePath     = options.stylePath    || $.rootPath + "/media/" + self.componentName + "/styles/";
     self.templatePath  = options.templatePath || options.scriptPath;
