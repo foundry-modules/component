@@ -84,11 +84,12 @@ Component.register = function(name, options, callback) {
     self.language      = options.language || $.locale.lang || "en";
 
     self.baseUrl       = options.baseUrl      || $.indexUrl + "?option=" + self.componentName;
+    self.ajaxUrl       = options.ajaxUrl      || $.rootPath + "/?option=" + self.componentName;
     self.scriptPath    = options.scriptPath   || $.rootPath + "/media/" + self.componentName + "/scripts/";
     self.stylePath     = options.stylePath    || $.rootPath + "/media/" + self.componentName + "/styles/";
     self.templatePath  = options.templatePath || options.scriptPath;
-    self.languagePath  = options.languagePath || self.baseUrl + '&tmpl=component&no_html=1&controller=lang&task=getLanguage';
-    self.viewPath      = options.viewPath     || self.baseUrl + '&tmpl=component&no_html=1&controller=themes&task=getAjaxTemplate';
+    self.languagePath  = options.languagePath || self.ajaxUrl + '&tmpl=component&no_html=1&controller=lang&task=getLanguage';
+    self.viewPath      = options.viewPath     || self.ajaxUrl + '&tmpl=component&no_html=1&controller=themes&task=getAjaxTemplate';
     self.prefix        = self.identifier + "/";
 
     if (token) {
@@ -97,7 +98,7 @@ Component.register = function(name, options, callback) {
     }    
 
     self.optimizeResources  = true;
-    self.resourcePath       = options.resourcePath || self.baseUrl + '&tmpl=component&no_html=1&controller=foundry&task=getResource';
+    self.resourcePath       = options.resourcePath || self.ajaxUrl + '&tmpl=component&no_html=1&controller=foundry&task=getResource';
     self.resourceCollectionInterval = 1200; // Joomla session timestamp is per second, we add another 200ms just to be safe.
 
     self.scriptVersioning = options.scriptVersioning || false;

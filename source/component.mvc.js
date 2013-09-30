@@ -3,7 +3,7 @@ $.Component.extend("ajax", function(namespace, params, callback) {
     var self = this;
 
     var options = {
-            url: self.baseUrl,
+            url: self.ajaxUrl,
             data: $.extend(
                 params,
                 {
