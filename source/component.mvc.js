@@ -1,3 +1,10 @@
+$.Component.extend("getToken", function(){
+    var self = this;
+    // Look for an updated token replaced by Joomla on page load and use
+    // that token instead. This is for sites where cache is turned on.
+    return $("span#" + self.identifier + "-token input").attr("name") || self.token;
+});
+
 $.Component.extend("ajax", function(namespace, params, callback) {
 
     var self = this;
@@ -15,13 +22,7 @@ $.Component.extend("ajax", function(namespace, params, callback) {
 
     options = $.extend(true, options, self.options.ajax);
 
-    // If the token was added after abstractComponent
-    if (self.token) options.data[self.token] = 1;
-
-    // Look for an updated token replaced by Joomla on page load and use
-    // that token instead. This is for sites where cache is turned on.
-    var token = $("span#" + self.identifier + "-token input").attr("name");
-    if (token) options.data[token] = 1;
+    options.data[self.getToken()] = 1;
 
     // This is for server-side function arguments
     if (options.data.hasOwnProperty('args')) {
