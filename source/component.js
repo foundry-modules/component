@@ -91,6 +91,7 @@ Component.register = function(name, options, callback) {
     self.languagePath  = options.languagePath || self.ajaxUrl + '&tmpl=component&no_html=1&controller=lang&task=getLanguage';
     self.viewPath      = options.viewPath     || self.ajaxUrl + '&tmpl=component&no_html=1&controller=themes&task=getAjaxTemplate';
     self.prefix        = self.identifier + "/";
+    self.token         = token;
 
     if (token) {
         self.options.ajax = {data: {}};
