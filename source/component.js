@@ -470,6 +470,8 @@ $.extend(proto, {
 
                     loader = $.require.template.loader(absoluteName);
 
+                    loader.name = absoluteNmae;
+
                     // Add template loader as a task of this batch
                     batch.addTask(loader);
 
@@ -535,6 +537,8 @@ $.extend(proto, {
                     if (loader) return;
 
                     loader = $.require.language.loader(name);
+
+                    loader.name = name;
 
                     batch.addTask(loader);
 
