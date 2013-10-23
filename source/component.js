@@ -228,7 +228,7 @@ $.extend(proto, {
 
     run: function(command) {
 
-        return ($.isFunction(command)) ? command($) : component;
+        return ($.isFunction(command)) ? command($) : this;
     },
 
     ready: (function(){
