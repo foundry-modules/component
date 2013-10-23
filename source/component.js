@@ -98,6 +98,9 @@ Component.register = function(name, options) {
     self.scriptVersioning  = options.scriptVersioning || false;
     self.token             = (abstractComponent || {}).token;
 
+    // Register component to bootleader
+    $FOUNDRY_BOOTLOADER.component(name, self);
+
     // If there's no abstract componet prior to this, we're done!
     if (abstractComponent) return;
 
@@ -111,7 +114,7 @@ Component.register = function(name, options) {
     } else {
 
         // Get component installers from bootloader and install them
-        var installer, installers = "$FOUNDRY_BOOTLOADER".installer(self.className);
+        var installer, installers = $FOUNDRY_BOOTLOADER.installer(name);
         while(installer = installers.shift()) {
             self.install.apply(self, installer);
         }        
