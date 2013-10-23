@@ -7,7 +7,7 @@ $FOUNDRY_BOOTLOADER.module.execute();
 $.each($FOUNDRY_BOOTLOADER.component(), function(i, abstractComponent){
 
     // If this component is registered, stop.
-    if (component.registered) return;
+    if (abstractComponent.registered) return;
 
     // Create an instance of the component
     $.Component.register(abstractComponent);

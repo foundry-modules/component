@@ -48,7 +48,7 @@ Component.register = function(name, options) {
     // Normalize arguments
     if ($.isFunction(name)) {
         abstractComponent = name;
-        name = abstractComponent.name;
+        name = abstractComponent.className;
         options = abstractComponent.options;
     }
 
@@ -97,12 +97,13 @@ Component.register = function(name, options) {
     self.resourceInterval  = 1200; // Joomla session timestamp is per second, we add another 200ms just to be safe.
     self.scriptVersioning  = options.scriptVersioning || false;
     self.token             = (abstractComponent || {}).token;
+    self.tasks             = [];
 
     // Register component to bootleader
     $FOUNDRY_BOOTLOADER.component(name, self);
 
     // If there's no abstract componet prior to this, we're done!
-    if (abstractComponent) return;
+    if (!abstractComponent) return;
 
     // If we're on development mode
     if (self.debug) {
@@ -251,7 +252,7 @@ $.extend(proto, {
     install: function(name, factory) {
 
         var self = this,
-            task = (self.install.task[name] || self.install.task[name] = $.Deferred());
+            task = self.tasks[name] || (self.tasks[name] = $.Deferred());
 
         // Getter
         if (!factory) return task;
