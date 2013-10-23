@@ -11,7 +11,7 @@
  *
  */
 
-var Component = $.Component = function(name, options, callback) {
+var Component = $.Component = function(name, options) {
 
     if (arguments.length < 1) {
         return Component.registry;
@@ -21,7 +21,7 @@ var Component = $.Component = function(name, options, callback) {
         return Component.registry[name];
     }
 
-    return Component.register(name, options, callback);
+    return Component.register(name, options);
 }
 
 Component.registry = {};
@@ -40,13 +40,17 @@ Component.proxy = function(component, property, value) {
     }
 }
 
-Component.register = function(name, options, callback) {
+Component.register = function(name, options) {
 
-    // If an abstract component was found,
-    // extract the execution queue.
-    var queue = (window[name]) ? window[name].queue || [] : [];
+    // If an abstract component was passed in
+    var abstractComponent;
 
-    var token = window[name].token;
+    // Normalize arguments
+    if ($.isFunction(name)) {
+        abstractComponent = name;
+        name = abstractComponent.name;
+        options = abstractComponent.options;
+    }
 
     var self =
 
@@ -68,104 +72,61 @@ Component.register = function(name, options, callback) {
         Component.proxy(self, property, value);
     });
 
-    self.$             = $;
-    self.options       = options;
-    self.className     = name;
-    self.identifier    = name.toLowerCase();
-    self.componentName = "com_" + self.identifier;
-    self.version       = options.version;
-    self.safeVersion   = self.version.replace(/\./g,"");
+    self.$                 = $;
+    self.options           = options;
+    self.className         = name;
+    self.identifier        = name.toLowerCase();
+    self.componentName     = "com_" + self.identifier;
+    self.prefix            = self.identifier + "/";
+    self.version           = options.version;
+    self.safeVersion       = self.version.replace(/\./g,"");
+    self.environment       = options.environment  || $.environment;
+    self.mode              = options.mode         || $.mode;
+    self.debug             = (self.environment==='development');
+    self.console           = Component.console(self);
+    self.language          = options.language || $.locale.lang || "en";
+    self.baseUrl           = options.baseUrl      || $.indexUrl + "?option=" + self.componentName;
+    self.ajaxUrl           = options.ajaxUrl      || $.basePath + "/?option=" + self.componentName;
+    self.scriptPath        = options.scriptPath   || $.rootPath + "/media/" + self.componentName + "/scripts/";
+    self.stylePath         = options.stylePath    || $.rootPath + "/media/" + self.componentName + "/styles/";
+    self.templatePath      = options.templatePath || options.scriptPath;
+    self.languagePath      = options.languagePath || self.ajaxUrl + '&tmpl=component&no_html=1&controller=lang&task=getLanguage';
+    self.viewPath          = options.viewPath     || self.ajaxUrl + '&tmpl=component&no_html=1&controller=themes&task=getAjaxTemplate';
+    self.optimizeResources = true;
+    self.resourcePath      = options.resourcePath || self.ajaxUrl + '&tmpl=component&no_html=1&controller=foundry&task=getResource';
+    self.resourceInterval  = 1200; // Joomla session timestamp is per second, we add another 200ms just to be safe.
+    self.scriptVersioning  = options.scriptVersioning || false;
+    self.token             = (abstractComponent || {}).token;
 
-    self.environment   = options.environment  || $.environment;
-    self.mode          = options.mode         || $.mode;
-    self.debug         = (self.environment=='development');
-    self.console       = Component.console(self);
+    // If there's no abstract componet prior to this, we're done!
+    if (abstractComponent) return;
 
-    self.language      = options.language || $.locale.lang || "en";
+    // If we're on development mode
+    if (self.debug) {
 
-    self.baseUrl       = options.baseUrl      || $.indexUrl + "?option=" + self.componentName;
-    self.ajaxUrl       = options.ajaxUrl      || $.basePath + "/?option=" + self.componentName;
-    self.scriptPath    = options.scriptPath   || $.rootPath + "/media/" + self.componentName + "/scripts/";
-    self.stylePath     = options.stylePath    || $.rootPath + "/media/" + self.componentName + "/styles/";
-    self.templatePath  = options.templatePath || options.scriptPath;
-    self.languagePath  = options.languagePath || self.ajaxUrl + '&tmpl=component&no_html=1&controller=lang&task=getLanguage';
-    self.viewPath      = options.viewPath     || self.ajaxUrl + '&tmpl=component&no_html=1&controller=themes&task=getAjaxTemplate';
-    self.prefix        = self.identifier + "/";
-    self.token         = token;
+        // Execute queue in abstract component straightaway
+        abstractComponent.queue.execute();
 
-    if (token) {
-        self.options.ajax = {data: {}};
-        self.options.ajax.data[token] = 1;
-    }    
+    // If we're on static or optimized mode
+    } else {
 
-    self.optimizeResources  = true;
-    self.resourcePath       = options.resourcePath || self.ajaxUrl + '&tmpl=component&no_html=1&controller=foundry&task=getResource';
-    self.resourceCollectionInterval = 1200; // Joomla session timestamp is per second, we add another 200ms just to be safe.
+        // Get component installers from bootloader and install them
+        var installer, installers = "$FOUNDRY_BOOTLOADER".installer(self.className);
+        while(installer = installers.shift()) {
+            self.install.apply(self, installer);
+        }        
 
-    self.scriptVersioning = options.scriptVersioning || false;
+        // Wait until definitions, scripts & resources are installed
+        $.when(
+            self.install("definitions"),
+            self.install("scripts"),
+            self.install("resources")
+        ).done(function(){
 
-    var executeAbstractQueue = function() {
-
-        // Go through each execution queue and run it
-        $.each(queue, function(i, func) {
-
-            if ($.isPlainObject(func)) {
-
-                self[func.method].apply(self, func.args);
-            }
-
-            if ($.isArray(func)) {
-
-                var chain = func,
-                    context = self;
-
-                $.each(chain, function(i, func) {
-
-                    context = context[func.method].apply(context, func.args);
-                });
-            }
+            // Then only execute queue in abstract component.
+            abstractComponent.queue.execute();
         });
     }
-
-    if (self.environment==="development") {
-        executeAbstractQueue();
-        return;
-    }
-
-    // Create require parcels
-    var parcels = {},
-        receiveParcelTask = [];
-
-    $.each(["Definitions", "Scripts", "Extras"], function(i, parcelName){
-        var task = parcels[self.className + ' ' + parcelName] = $.Deferred();
-        receiveParcelTask.push(task);
-    });
-
-    // Dispatch itself to precompiled scripts first
-    Dispatch.to(self.className).at(function(fn, manifest){
-
-        if (/Definitions/.test(manifest.name)) {
-            fn($, self);
-        }
-
-        // Prepend to the beginning of the abstract execution queue
-        queue.unshift({
-            method: "run",
-            context: window,
-            args: [function(){
-                fn($, self);
-            }]
-        });
-
-        // Resolve parcel
-        parcels[manifest.name].resolve();
-    });
-
-    $.when.apply(null, receiveParcelTask)
-     .done(function(){
-
-        executeAbstractQueue();
-     });
 }
 
 Component.extend = function(property, value) {
@@ -283,6 +244,29 @@ $.extend(proto, {
             });
         }
     })(),
+
+    install: function(name, factory) {
+
+        var self = this,
+            task = (self.install.task[name] || self.install.task[name] = $.Deferred());
+
+        // Getter
+        if (!factory) return task;
+
+        // Setter
+        var install = function(){
+            factory($, self);
+            return task.resolve();
+        }
+
+        // If this is installer contains component definitions,
+        // install straightaway.
+        if (name=="definitions") return install();
+
+        // Else for component definitiosn to install first,
+        // then only install this installer.
+        $.when(self.install("definitions")).done(install);
+    },
 
     template: function(name) {
 
