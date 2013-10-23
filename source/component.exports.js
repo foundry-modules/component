@@ -1,10 +1,10 @@
 // Component should always be the last core plugin to load.
 
 // Execute all pending foundry modules
-"$FOUNDRY_BOOTLOADER".module.execute();
+$FOUNDRY_BOOTLOADER.module.execute();
 
 // Get all abstract components
-$.each("$FOUNDRY_BOOTLOADER".component(), function(i, abstractComponent){
+$.each($FOUNDRY_BOOTLOADER.component(), function(i, abstractComponent){
 
     // If this component is registered, stop.
     if (component.registered) return;
