@@ -100,7 +100,7 @@ Component.register = function(name, options) {
     self.tasks             = [];
 
     // Register component to bootleader
-    $FOUNDRY_BOOTLOADER.component(name, self);
+    %BOOTCODE%.component(name, self);
 
     // If there's no abstract componet prior to this, we're done!
     if (!abstractComponent) return;
@@ -115,7 +115,7 @@ Component.register = function(name, options) {
     } else {
 
         // Get component installers from bootloader and install them
-        var installer, installers = $FOUNDRY_BOOTLOADER.installer(name);
+        var installer, installers = %BOOTCODE%.installer(name);
         while(installer = installers.shift()) {
             self.install.apply(self, installer);
         }        
