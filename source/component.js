@@ -118,7 +118,7 @@ Component.register = function(name, options) {
         var installer, installers = %BOOTCODE%.installer(name);
         while(installer = installers.shift()) {
             self.install.apply(self, installer);
-        }        
+        }
 
         // Wait until definitions, scripts & resources are installed
         $.when(
@@ -387,7 +387,7 @@ $.extend(proto, {
 
                                     if (retry > 1 && self.debug) {
                                         console.info("Attempt to try and get resources again was successful!");
-                                    }                                    
+                                    }
                                 })
                                 .fail(function(){
                                     if (retry > 2) {
@@ -606,6 +606,46 @@ $.extend(proto, {
             return require;
         };
 
+        require.app = function() {
+
+            var batch = this,
+
+                request = batch.expand(arguments, {path: self.scriptPath})
+
+                names = $.map(request.names, function(name) {
+
+                    // Ignore module definitions
+                    if ($.isArray(name) ||
+
+                        // and urls
+                        $.isUrl(name) ||
+
+                        // and relative paths.
+                        /^(\/|\.)/.test(name)) return name;
+
+                    var parts = name.split('/'),
+                        path = $.rootPath + '/media/' + self.componentName + '/apps';
+
+                    // Currently used by fields
+                    if (parts.length===4) {
+                        path += '/' + parts.shift();
+                    }
+
+                    // Build path
+                    path += parts[0] + '/' + parts[1] + '/scripts/' + parts[2];
+
+                    var moduleName = self.prefix + 'app/' + name,
+
+                        moduleUrl = path +
+                            (request.options.extension || 'js') +
+                            ((self.scriptVersioning) ? "?" + "version=" + self.safeVersion : "");
+
+                    return [[moduleName, moduleUrl, true]];
+                });
+
+            _require.script.apply(require, [request.options].concat(names));
+
+        };
 
         // Only execute require done callback when component is ready
         require.done = function(callback) {
