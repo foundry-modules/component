@@ -636,7 +636,7 @@ $.extend(proto, {
 
                     var moduleName = self.prefix + 'apps/' + name,
 
-                        moduleUrl = path +
+                        moduleUrl = path + '.' +
                             (request.options.extension || 'js') +
                             ((self.scriptVersioning) ? "?" + "version=" + self.safeVersion : "");
 
