@@ -634,7 +634,7 @@ $.extend(proto, {
                     // Build path
                     path += '/' + parts[0] + '/' + parts[1] + '/scripts/' + parts[2];
 
-                    var moduleName = self.prefix + 'app/' + name,
+                    var moduleName = self.prefix + 'apps/' + name,
 
                         moduleUrl = path +
                             (request.options.extension || 'js') +
