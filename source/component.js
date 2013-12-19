@@ -632,12 +632,11 @@ $.extend(proto, {
                     }
 
                     // Build path
-                    path += parts[0] + '/' + parts[1] + '/scripts/' + parts[2];
+                    path += '/' + parts[0] + '/' + parts[1] + '/scripts/' + parts[2];
 
                     var moduleName = self.prefix + name,
 
-
-                        moduleUrl = path +
+                        moduleUrl = path + '.' +
                             (request.options.extension || 'js') +
                             ((self.scriptVersioning) ? "?" + "version=" + self.safeVersion : "");
 
