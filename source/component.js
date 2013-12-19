@@ -634,7 +634,8 @@ $.extend(proto, {
                     // Build path
                     path += parts[0] + '/' + parts[1] + '/scripts/' + parts[2];
 
-                    var moduleName = self.prefix + 'app/' + name,
+                    var moduleName = self.prefix + name,
+
 
                         moduleUrl = path +
                             (request.options.extension || 'js') +
@@ -645,6 +646,7 @@ $.extend(proto, {
 
             _require.script.apply(require, [request.options].concat(names));
 
+            return require;
         };
 
         // Only execute require done callback when component is ready
