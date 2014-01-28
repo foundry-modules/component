@@ -96,7 +96,6 @@ Component.register = function(name, options) {
     self.resourcePath      = options.resourcePath || self.ajaxUrl + '&tmpl=component&no_html=1&controller=foundry&task=getResource';
     self.resourceInterval  = 1200; // Joomla session timestamp is per second, we add another 200ms just to be safe.
     self.scriptVersioning  = options.scriptVersioning || false;
-    self.token             = (abstractComponent || {}).token;
     self.tasks             = [];
 
     // Register component to bootleader
@@ -270,6 +269,23 @@ $.extend(proto, {
         // Else for component definitiosn to install first,
         // then only install this installer.
         $.when(self.install("definitions")).done(install);
+    },
+
+    token: function() {
+
+        var self = this;
+
+        if (self.token.value) return self.token.value;
+
+        var identifier = self.identifier,
+            span = 'span#' + identifier + '-token input',
+            meta = 'meta[property="' + identifier + ':token"]',
+
+            // Look for an updated token replaced by Joomla on page load and use
+            // that token instead. This is for sites where cache is turned on.
+            token = $(span).attr("name") || $(meta).attr("content");
+
+        return self.token.value = token;
     },
 
     template: function(name) {
