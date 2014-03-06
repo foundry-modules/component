@@ -279,7 +279,7 @@ $.extend(proto, {
 
         var identifier = self.identifier,
             span = 'span#' + identifier + '-token input',
-            meta = 'meta[property="' + identifier + ':token"]',
+            meta = 'meta[name="' + identifier + ':token"]',
 
             // Look for an updated token replaced by Joomla on page load and use
             // that token instead. This is for sites where cache is turned on.
