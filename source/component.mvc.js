@@ -1,9 +1,10 @@
 $.Component.extend("ajax", function(namespace, params, callback) {
 
-    var self = this;
+    var self = this,
+        date = new Date();
 
     var options = {
-            url: self.ajaxUrl,
+            url: self.ajaxUrl + "&_ts=" + date.getTime(),
             data: $.extend(
                 params,
                 {
