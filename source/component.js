@@ -141,7 +141,7 @@ Component.register = function(name, options) {
         if (length==1) return $.Storage.get(key)
 
         // Setter (remove or set)
-        if (length==2) return key===true ? $.Storage.remove(prefix + val) : $.Storage.set(key, val);
+        if (length==2) return key===false ? $.Storage.remove(prefix + val) : $.Storage.set(key, val);
 
         return storage.getAll();
     };
