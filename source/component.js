@@ -130,6 +130,50 @@ Component.register = function(name, options) {
             abstractComponent.queue.execute();
         });
     }
+
+    var storage = self.storage = function(key, val) {
+
+        var prefix = self.prefix,
+            key = prefix + key,
+            length = arguments.length;
+
+        // Getter
+        if (length==1) return $.Storage.get(key)
+
+        // Setter (remove or set)
+        if (length==2) return key===true ? $.Storage.remove(prefix + val) : $.Storage.set(key, val);
+
+        return storage.getAll();
+    };
+
+    $.extend(self.storage, {
+
+        getAll: function() {
+
+            var prefix = self.prefix,
+                i = prefix.length,
+                storage = $.Storage.getAll(),
+                obj = {};
+
+            for (key in storage) {
+                if (key.substr(0, i)==prefix) {
+                    obj[key.substr(i)] = storage[key];
+                }
+            }
+
+            return obj;
+        },
+
+        remove: function(key) {
+            $.Storage.remove(self.prefix + key);
+        },
+
+        clear: function() {
+            for (key in storage.getAll()) {
+                storage.remove(key);
+            }
+        }
+    });
 }
 
 Component.extend = function(property, value) {
@@ -702,5 +746,4 @@ $.extend(proto, {
             // Get module
             $.module(fullname);
     }
-
 });
