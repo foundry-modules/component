@@ -206,7 +206,7 @@ Component.console = function(component) {
 
             instance.selector = "#" + self.identifier + "-console";
 
-            instance.init = (function() {
+            instance.init = function() {
 
                 element = $(instance.selector);
 
@@ -221,7 +221,7 @@ Component.console = function(component) {
                 instance.element = element;
 
                 return arguments.callee;
-            })();
+            };
 
             instance.methods = {
 

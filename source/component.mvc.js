@@ -67,7 +67,7 @@ $.Component.extend("ajax", function(namespace, params, callback) {
     var ajax = $.server(options);
 
     ajax.progress(function(message, type, code) {
-        if (type=="debug") {
+        if (self.debug && type=="debug") {
             self.console.log(message, type, code);
         }
     });
