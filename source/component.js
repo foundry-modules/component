@@ -616,7 +616,7 @@ $.extend(proto, {
 
             var batch = this,
 
-                request = batch.expand(arguments, {path: self.scriptPath})
+                request = batch.expand(arguments, {path: self.scriptPath}),
 
                 names = $.map(request.names, function(name) {
 
