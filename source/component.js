@@ -122,8 +122,7 @@ Component.register = function(name, options) {
         // Wait until definitions, scripts & resources are installed
         $.when(
             self.install("definitions"),
-            self.install("scripts"),
-            self.install("resources")
+            self.install("scripts")
         ).done(function(){
 
             // Then only execute queue in abstract component.
