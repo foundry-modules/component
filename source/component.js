@@ -318,8 +318,11 @@ $.extend(proto, {
 
         var self = this;
 
-        if (self.token.value) return self.token.value;
+        if (self.options.token) {
+            return self.options.token;
+        }
 
+        // Legacy supprot which still uses component:token
         var identifier = self.identifier,
             span = 'span#' + identifier + '-token input',
             meta = 'meta[name="' + identifier + ':token"]',
